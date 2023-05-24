@@ -13,25 +13,30 @@ import (
 )
 
 type CrusadoConfig struct {
-	OrganizationUrl     string
-	PersonalAccessToken string
-	ProjectName         string
+	OrganizationUrl            string
+	PersonalAccessToken        string
+	ProjectName                string
+	IterationPath              string
+	UseIterationPathFromEnvVar bool
 }
 
-func getConfig() CrusadoConfig {
+func getConfig(useIterationPathFromEnvVar bool) CrusadoConfig {
 	organizationUrl := os.Getenv("AZURE_ORG_URL")
 	personalAccessToken := os.Getenv("AZURE_PAT")
 	projectName := os.Getenv("AZURE_PROJECT_NAME")
+	currentIteration := os.Getenv("ITERATION_PATH")
 
 	return CrusadoConfig{
-		OrganizationUrl:     organizationUrl,
-		PersonalAccessToken: personalAccessToken,
-		ProjectName:         projectName,
+		OrganizationUrl:            organizationUrl,
+		PersonalAccessToken:        personalAccessToken,
+		ProjectName:                projectName,
+		IterationPath:              currentIteration,
+		UseIterationPathFromEnvVar: useIterationPathFromEnvVar,
 	}
 }
 
 func main() {
-	config := getConfig()
+	config := getConfig(true)
 
 	// Create a connection to your organization
 	connection := azuredevops.NewPatConnection(config.OrganizationUrl, config.PersonalAccessToken)
@@ -39,18 +44,25 @@ func main() {
 	ctx := context.Background()
 
 	// get current iteration
+	currentIterationPath := config.IterationPath
+	if !config.UseIterationPathFromEnvVar {
+		log.Print("Getting path of current iteration...")
 
-	workClient, err := work.NewClient(ctx, connection)
-	if err != nil {
-		log.Fatal(err)
+		workClient, err := work.NewClient(ctx, connection)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		currentIteration, err := getCurrentIteration(ctx, workClient, config.ProjectName)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Got current iteration path: %+v", *currentIteration.Path)
+		currentIterationPath = *currentIteration.Path
+	} else {
+		log.Printf("Using configured iteration path: %+v", currentIterationPath)
 	}
-
-	currentIteration, err := getCurrentIteration(ctx, workClient, config.ProjectName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("%+v", *currentIteration.Path)
 
 	// create user story in current iteration
 
@@ -59,7 +71,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	workItem, err := createUserStory(ctx, workitemClient, config.ProjectName, *currentIteration.Path)
+	workItem, err := createUserStory(ctx, workitemClient, config.ProjectName, currentIterationPath)
 	if err != nil {
 		log.Fatal(err)
 	}
