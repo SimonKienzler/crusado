@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 
 	"github.com/simonkienzler/crusado/pkg/config"
@@ -14,28 +15,18 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-const userStoryTemplateExample = `name: example-user-story-template
-description: This template demonstrates the capabilities of crusado.
-storyTitle: Try out crusado
-storyDescription: crusado looks like a great tool. We should test it.
-tasks:
-  - title: Download crusado
-    description: step 1
-  - title: Test crusado
-    description: step 2
-  - title: Document test results
-    description: step 3
-`
-
 func main() {
-	// create user story template struct
-	userStoryTemplate := config.UserStoryTemplate{}
-	yaml.Unmarshal([]byte(userStoryTemplateExample), &userStoryTemplate)
-	log.Printf("User Story Template: %+v", userStoryTemplate)
-
 	ctx := context.Background()
-
 	useDryRunMode := true
+
+	// create user story template struct
+	userStoryTemplateExample, err := ioutil.ReadFile("./example/userStoryTemplate.yaml")
+	if err != nil {
+		log.Fatalf("Could not read example template file: %s", err)
+	}
+
+	userStoryTemplate := config.UserStoryTemplate{}
+	yaml.Unmarshal(userStoryTemplateExample, &userStoryTemplate)
 
 	workitemsService, err := createWorkitemsService(ctx, useDryRunMode)
 	if err != nil {
@@ -45,8 +36,6 @@ func main() {
 	userStoryTemplatesService := &userstorytemplates.Service{
 		WorkitemsService: *workitemsService,
 	}
-
-	// create user story and tasks from template
 
 	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, userStoryTemplate); err != nil {
 		log.Fatalf("Error during user story template creation: %s", err)
