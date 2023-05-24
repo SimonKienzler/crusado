@@ -10,6 +10,11 @@ type CrusadoConfig struct {
 	UseIterationPathFromEnvVar bool
 }
 
+type ProjectConfig struct {
+	Name          string
+	IterationPath string
+}
+
 func GetConfig(useIterationPathFromEnvVar bool) CrusadoConfig {
 	organizationUrl := os.Getenv("AZURE_ORG_URL")
 	personalAccessToken := os.Getenv("AZURE_PAT")
