@@ -4,59 +4,94 @@ import (
 	"context"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/core"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/webapi"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
 )
 
-func main() {
+type CrusadoConfig struct {
+	OrganizationUrl     string
+	PersonalAccessToken string
+	ProjectName         string
+	CurrentIteration    string
+}
+
+func getConfig() CrusadoConfig {
 	organizationUrl := os.Getenv("AZURE_ORG_URL")
 	personalAccessToken := os.Getenv("AZURE_PAT")
+	projectName := os.Getenv("AZURE_PROJECT_NAME")
+	currentIteration := os.Getenv("CURRENT_ITERATION")
+
+	return CrusadoConfig{
+		OrganizationUrl:     organizationUrl,
+		PersonalAccessToken: personalAccessToken,
+		ProjectName:         projectName,
+		CurrentIteration:    currentIteration,
+	}
+}
+
+func main() {
+	config := getConfig()
 
 	// Create a connection to your organization
-	connection := azuredevops.NewPatConnection(organizationUrl, personalAccessToken)
+	connection := azuredevops.NewPatConnection(config.OrganizationUrl, config.PersonalAccessToken)
 
 	ctx := context.Background()
 
-	// Create a client to interact with the Core area
-	coreClient, err := core.NewClient(ctx, connection)
+	workitemClient, err := workitemtracking.NewClient(ctx, connection)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Get first page of the list of team projects for your organization
-	responseValue, err := coreClient.GetProjects(ctx, core.GetProjectsArgs{})
+	project := config.ProjectName
+	workItemType := "User Story"
+	validateOnly := true
+	document := buildJSONPatchDocument(
+		"work item creation test",
+		"hello from the crusado CLI",
+		project,
+		config.CurrentIteration,
+	)
+
+	workItem, err := workitemClient.CreateWorkItem(ctx, workitemtracking.CreateWorkItemArgs{
+		Document:     &document,
+		Project:      &project,
+		Type:         &workItemType,
+		ValidateOnly: &validateOnly,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	index := 0
-	for responseValue != nil {
-		// Log the page of team project names
-		for _, teamProjectReference := range (*responseValue).Value {
-			log.Printf("Name[%v] = %v", index, *teamProjectReference.Name)
-			index++
-		}
+	log.Printf("%+v", workItem)
+}
 
-		// if continuationToken has a value, then there is at least one more page of projects to get
-		if responseValue.ContinuationToken != "" {
-
-			continuationToken, err := strconv.Atoi(responseValue.ContinuationToken)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Get next page of team projects
-			projectArgs := core.GetProjectsArgs{
-				ContinuationToken: &continuationToken,
-			}
-			responseValue, err = coreClient.GetProjects(ctx, projectArgs)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			responseValue = nil
-		}
+func buildJSONPatchDocument(title, description, area, iteration string) []webapi.JsonPatchOperation {
+	return []webapi.JsonPatchOperation{
+		{
+			Op:    &webapi.OperationValues.Add,
+			Path:  stringPointer("/fields/System.Title"),
+			Value: title,
+		},
+		{
+			Op:    &webapi.OperationValues.Add,
+			Path:  stringPointer("/fields/System.Description"),
+			Value: description,
+		},
+		{
+			Op:    &webapi.OperationValues.Add,
+			Path:  stringPointer("/fields/System.AreaPath"),
+			Value: area,
+		},
+		{
+			Op:    &webapi.OperationValues.Add,
+			Path:  stringPointer("/fields/System.IterationPath"),
+			Value: iteration,
+		},
 	}
+}
+
+func stringPointer(s string) *string {
+	return &s
 }
