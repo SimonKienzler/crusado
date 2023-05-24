@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,8 @@ import (
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/work"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
 )
+
+var addOp = webapi.OperationValues.Add
 
 type CrusadoConfig struct {
 	OrganizationUrl            string
@@ -76,7 +79,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("%+v", *workItem)
+	log.Printf("User Story: %+v", *workItem)
+
+	// create task underneath the user story
+	task, err := createTaskUnderneathUserStory(ctx, workitemClient, config.ProjectName, currentIterationPath, workItem.Url)
+	if err != nil {
+		log.Fatalf("Error during task creation: %s", err)
+	}
+
+	log.Printf("Task: %+v", *task)
 }
 
 func getCurrentIteration(ctx context.Context, workClient work.Client, projectName string) (*work.TeamSettingsIteration, error) {
@@ -100,9 +111,9 @@ func getCurrentIteration(ctx context.Context, workClient work.Client, projectNam
 func createUserStory(ctx context.Context, workitemClient workitemtracking.Client, projectName, currentIteration string) (*workitemtracking.WorkItem, error) {
 	project := projectName
 	workItemType := "User Story"
-	validateOnly := true
-	document := buildJSONPatchDocument(
-		"work item creation test",
+	validateOnly := false
+	document := buildBasicWorkItemJSONPatchDocument(
+		"this is a user story",
 		"hello from the crusado CLI",
 		project,
 		currentIteration,
@@ -116,28 +127,52 @@ func createUserStory(ctx context.Context, workitemClient workitemtracking.Client
 	})
 }
 
-func buildJSONPatchDocument(title, description, area, iteration string) []webapi.JsonPatchOperation {
+func createTaskUnderneathUserStory(ctx context.Context, workitemClient workitemtracking.Client, projectName, currentIteration string, parentUrl *string) (*workitemtracking.WorkItem, error) {
+	project := projectName
+	workItemType := "Task"
+	validateOnly := false
+	document := buildBasicWorkItemJSONPatchDocument(
+		"this is a task",
+		"hello from the crusado CLI",
+		project,
+		currentIteration,
+	)
+
+	if parentUrl == nil {
+		return nil, errors.New("cannot create task underneath user story without parent url")
+	}
+
+	log.Printf("Parent URL: %s", *parentUrl)
+
+	document = append(document, buildJSONPatchOperation(
+		addOp, "/relations/-", workitemtracking.WorkItemRelation{
+			Url: parentUrl,
+			Rel: stringPointer("System.LinkTypes.Hierarchy-Reverse"),
+		},
+	))
+
+	return workitemClient.CreateWorkItem(ctx, workitemtracking.CreateWorkItemArgs{
+		Document:     &document,
+		Project:      &project,
+		Type:         &workItemType,
+		ValidateOnly: &validateOnly,
+	})
+}
+
+func buildBasicWorkItemJSONPatchDocument(title, description, areaPath, iterationPath string) []webapi.JsonPatchOperation {
 	return []webapi.JsonPatchOperation{
-		{
-			Op:    &webapi.OperationValues.Add,
-			Path:  stringPointer("/fields/System.Title"),
-			Value: title,
-		},
-		{
-			Op:    &webapi.OperationValues.Add,
-			Path:  stringPointer("/fields/System.Description"),
-			Value: description,
-		},
-		{
-			Op:    &webapi.OperationValues.Add,
-			Path:  stringPointer("/fields/System.AreaPath"),
-			Value: area,
-		},
-		{
-			Op:    &webapi.OperationValues.Add,
-			Path:  stringPointer("/fields/System.IterationPath"),
-			Value: iteration,
-		},
+		buildJSONPatchOperation(addOp, "/fields/System.Title", title),
+		buildJSONPatchOperation(addOp, "/fields/System.Description", description),
+		buildJSONPatchOperation(addOp, "/fields/System.AreaPath", areaPath),
+		buildJSONPatchOperation(addOp, "/fields/System.IterationPath", iterationPath),
+	}
+}
+
+func buildJSONPatchOperation(op webapi.Operation, path string, value interface{}) webapi.JsonPatchOperation {
+	return webapi.JsonPatchOperation{
+		Op:    &op,
+		Path:  &path,
+		Value: value,
 	}
 }
 
