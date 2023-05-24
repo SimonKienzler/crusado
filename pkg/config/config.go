@@ -13,6 +13,7 @@ type CrusadoConfig struct {
 type ProjectConfig struct {
 	Name          string
 	IterationPath string
+	AreaPath      string
 }
 
 func GetConfig(useIterationPathFromEnvVar bool) CrusadoConfig {

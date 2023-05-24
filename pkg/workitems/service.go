@@ -43,16 +43,11 @@ func (s *Service) GetCurrentIteration(ctx context.Context) (*work.TeamSettingsIt
 	return &currentIteration, nil
 }
 
-func (s *Service) CreateUserStory(ctx context.Context) (*workitemtracking.WorkItem, error) {
+func (s *Service) CreateUserStory(ctx context.Context, title, description string) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectConfig.Name
 	workItemType := "User Story"
 	validateOnly := s.DryRun
-	document := buildBasicWorkItemJSONPatchDocument(
-		"this is a user story",
-		"hello from the crusado CLI",
-		project,
-		s.ProjectConfig.IterationPath,
-	)
+	document := s.buildBasicWorkItemJSONPatchDocument(title, description)
 
 	return s.WorkitemClient.CreateWorkItem(ctx, workitemtracking.CreateWorkItemArgs{
 		Document:     &document,
@@ -62,26 +57,21 @@ func (s *Service) CreateUserStory(ctx context.Context) (*workitemtracking.WorkIt
 	})
 }
 
-func (s *Service) CreateTaskUnderneathUserStory(ctx context.Context, parentUrl *string) (*workitemtracking.WorkItem, error) {
+func (s *Service) CreateTaskUnderneathUserStory(ctx context.Context, title, description string, parent *workitemtracking.WorkItem) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectConfig.Name
 	workItemType := "Task"
 	validateOnly := s.DryRun
-	document := buildBasicWorkItemJSONPatchDocument(
-		"this is a task",
-		"hello from the crusado CLI",
-		project,
-		s.ProjectConfig.IterationPath,
-	)
+	document := s.buildBasicWorkItemJSONPatchDocument(title, description)
 
-	if parentUrl == nil {
-		return nil, errors.New("cannot create task underneath user story without parent url")
+	if parent == nil {
+		return nil, errors.New("cannot create task underneath user story without parent")
 	}
 
-	log.Printf("Parent URL: %s", *parentUrl)
+	log.Printf("Parent URL: %s", *parent.Url)
 
 	document = append(document, buildJSONPatchOperation(
 		addOp, "/relations/-", workitemtracking.WorkItemRelation{
-			Url: parentUrl,
+			Url: parent.Url,
 			Rel: stringPointer("System.LinkTypes.Hierarchy-Reverse"),
 		},
 	))
@@ -94,12 +84,12 @@ func (s *Service) CreateTaskUnderneathUserStory(ctx context.Context, parentUrl *
 	})
 }
 
-func buildBasicWorkItemJSONPatchDocument(title, description, areaPath, iterationPath string) []webapi.JsonPatchOperation {
+func (s *Service) buildBasicWorkItemJSONPatchDocument(title, description string) []webapi.JsonPatchOperation {
 	return []webapi.JsonPatchOperation{
 		buildJSONPatchOperation(addOp, "/fields/System.Title", title),
 		buildJSONPatchOperation(addOp, "/fields/System.Description", description),
-		buildJSONPatchOperation(addOp, "/fields/System.AreaPath", areaPath),
-		buildJSONPatchOperation(addOp, "/fields/System.IterationPath", iterationPath),
+		buildJSONPatchOperation(addOp, "/fields/System.AreaPath", s.ProjectConfig.AreaPath),
+		buildJSONPatchOperation(addOp, "/fields/System.IterationPath", s.ProjectConfig.IterationPath),
 	}
 }
 

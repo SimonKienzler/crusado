@@ -37,7 +37,8 @@ func main() {
 		WorkClient:     workClient,
 		DryRun:         true,
 		ProjectConfig: config.ProjectConfig{
-			Name: crusadoConfig.ProjectName,
+			Name:     crusadoConfig.ProjectName,
+			AreaPath: crusadoConfig.ProjectName,
 		},
 	}
 
@@ -59,15 +60,16 @@ func main() {
 
 	// create user story in current iteration
 
-	workItem, err := workitemsService.CreateUserStory(ctx)
+	userStory, err := workitemsService.CreateUserStory(ctx, "A user story", "hello from crusado")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("User Story: %+v", *workItem)
+	log.Printf("User Story: %+v", *userStory)
 
 	// create task underneath the user story
-	task, err := workitemsService.CreateTaskUnderneathUserStory(ctx, workItem.Url)
+
+	task, err := workitemsService.CreateTaskUnderneathUserStory(ctx, "A task", "", userStory)
 	if err != nil {
 		log.Fatalf("Error during task creation: %s", err)
 	}
