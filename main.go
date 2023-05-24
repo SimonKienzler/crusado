@@ -5,14 +5,34 @@ import (
 	"log"
 
 	"github.com/simonkienzler/crusado/pkg/config"
+	"github.com/simonkienzler/crusado/pkg/userstorytemplates"
 	"github.com/simonkienzler/crusado/pkg/workitems"
 
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/work"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
+	yaml "gopkg.in/yaml.v3"
 )
 
+const userStoryTemplateExample = `name: example-user-story-template
+description: This template demonstrates the capabilities of crusado.
+storyTitle: Try out crusado
+storyDescription: crusado looks like a great tool. We should test it.
+tasks:
+  - title: Download crusado
+    description: step 1
+  - title: Test crusado
+    description: step 2
+  - title: Document test results
+    description: step 3
+`
+
 func main() {
+	// create user story template struct
+	userStoryTemplate := config.UserStoryTemplate{}
+	yaml.Unmarshal([]byte(userStoryTemplateExample), &userStoryTemplate)
+	log.Printf("User Story Template: %+v", userStoryTemplate)
+
 	ctx := context.Background()
 
 	useDryRunMode := true
@@ -22,23 +42,15 @@ func main() {
 		log.Fatalf("Error during service creation: %s", err)
 	}
 
-	// create user story in current iteration
-
-	userStory, err := workitemsService.CreateUserStory(ctx, "A user story", "hello from crusado")
-	if err != nil {
-		log.Fatalf("Error during user story creation: %s", err)
+	userStoryTemplatesService := &userstorytemplates.Service{
+		WorkitemsService: *workitemsService,
 	}
 
-	log.Printf("User Story: %+v", *userStory)
+	// create user story and tasks from template
 
-	// create task underneath the user story
-
-	task, err := workitemsService.CreateTaskUnderneathUserStory(ctx, "A task", "", userStory)
-	if err != nil {
-		log.Fatalf("Error during task creation: %s", err)
+	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, userStoryTemplate); err != nil {
+		log.Fatalf("Error during user story template creation: %s", err)
 	}
-
-	log.Printf("Task: %+v", *task)
 }
 
 func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems.Service, error) {
