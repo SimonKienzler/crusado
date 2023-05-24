@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
+
+	"github.com/simonkienzler/crusado/pkg/config"
 
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/webapi"
@@ -15,31 +16,8 @@ import (
 
 var addOp = webapi.OperationValues.Add
 
-type CrusadoConfig struct {
-	OrganizationUrl            string
-	PersonalAccessToken        string
-	ProjectName                string
-	IterationPath              string
-	UseIterationPathFromEnvVar bool
-}
-
-func getConfig(useIterationPathFromEnvVar bool) CrusadoConfig {
-	organizationUrl := os.Getenv("AZURE_ORG_URL")
-	personalAccessToken := os.Getenv("AZURE_PAT")
-	projectName := os.Getenv("AZURE_PROJECT_NAME")
-	currentIteration := os.Getenv("ITERATION_PATH")
-
-	return CrusadoConfig{
-		OrganizationUrl:            organizationUrl,
-		PersonalAccessToken:        personalAccessToken,
-		ProjectName:                projectName,
-		IterationPath:              currentIteration,
-		UseIterationPathFromEnvVar: useIterationPathFromEnvVar,
-	}
-}
-
 func main() {
-	config := getConfig(true)
+	config := config.GetConfig(true)
 
 	// Create a connection to your organization
 	connection := azuredevops.NewPatConnection(config.OrganizationUrl, config.PersonalAccessToken)
@@ -111,7 +89,7 @@ func getCurrentIteration(ctx context.Context, workClient work.Client, projectNam
 func createUserStory(ctx context.Context, workitemClient workitemtracking.Client, projectName, currentIteration string) (*workitemtracking.WorkItem, error) {
 	project := projectName
 	workItemType := "User Story"
-	validateOnly := false
+	validateOnly := true
 	document := buildBasicWorkItemJSONPatchDocument(
 		"this is a user story",
 		"hello from the crusado CLI",
@@ -130,7 +108,7 @@ func createUserStory(ctx context.Context, workitemClient workitemtracking.Client
 func createTaskUnderneathUserStory(ctx context.Context, workitemClient workitemtracking.Client, projectName, currentIteration string, parentUrl *string) (*workitemtracking.WorkItem, error) {
 	project := projectName
 	workItemType := "Task"
-	validateOnly := false
+	validateOnly := true
 	document := buildBasicWorkItemJSONPatchDocument(
 		"this is a task",
 		"hello from the crusado CLI",
