@@ -13,29 +13,56 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
+	useDryRunMode := true
+
+	workitemsService, err := createWorkitemsService(ctx, useDryRunMode)
+	if err != nil {
+		log.Fatalf("Error during service creation: %s", err)
+	}
+
+	// create user story in current iteration
+
+	userStory, err := workitemsService.CreateUserStory(ctx, "A user story", "hello from crusado")
+	if err != nil {
+		log.Fatalf("Error during user story creation: %s", err)
+	}
+
+	log.Printf("User Story: %+v", *userStory)
+
+	// create task underneath the user story
+
+	task, err := workitemsService.CreateTaskUnderneathUserStory(ctx, "A task", "", userStory)
+	if err != nil {
+		log.Fatalf("Error during task creation: %s", err)
+	}
+
+	log.Printf("Task: %+v", *task)
+}
+
+func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems.Service, error) {
 	crusadoConfig := config.GetConfig(true)
 
 	// create a connection to the organization
 	connection := azuredevops.NewPatConnection(crusadoConfig.OrganizationUrl, crusadoConfig.PersonalAccessToken)
 
-	ctx := context.Background()
-
 	// create clients required by the workitems service
 	workitemClient, err := workitemtracking.NewClient(ctx, connection)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	workClient, err := work.NewClient(ctx, connection)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// configure the workitems service
 	workitemsService := workitems.Service{
 		WorkitemClient: workitemClient,
 		WorkClient:     workClient,
-		DryRun:         true,
+		DryRun:         useDryRunMode,
 		ProjectConfig: config.ProjectConfig{
 			Name:     crusadoConfig.ProjectName,
 			AreaPath: crusadoConfig.ProjectName,
@@ -49,7 +76,7 @@ func main() {
 
 		currentIteration, err := workitemsService.GetCurrentIteration(ctx)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		log.Printf("Got current iteration path: %+v", *currentIteration.Path)
@@ -58,21 +85,5 @@ func main() {
 		log.Printf("Using configured iteration path: %+v", workitemsService.ProjectConfig.IterationPath)
 	}
 
-	// create user story in current iteration
-
-	userStory, err := workitemsService.CreateUserStory(ctx, "A user story", "hello from crusado")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("User Story: %+v", *userStory)
-
-	// create task underneath the user story
-
-	task, err := workitemsService.CreateTaskUnderneathUserStory(ctx, "A task", "", userStory)
-	if err != nil {
-		log.Fatalf("Error during task creation: %s", err)
-	}
-
-	log.Printf("Task: %+v", *task)
+	return &workitemsService, nil
 }
