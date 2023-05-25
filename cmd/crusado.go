@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/simonkienzler/crusado/cmd/template"
+
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +18,10 @@ your current iteration. You can even use Markdown syntax in your descriptions.`,
 		Run: Crusado,
 	}
 )
+
+func init() {
+	crusadoCmd.AddCommand(template.RootCmd)
+}
 
 func Execute() error {
 	return crusadoCmd.Execute()

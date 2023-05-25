@@ -1,4 +1,4 @@
-package cmd
+package template
 
 import (
 	"context"
@@ -15,14 +15,14 @@ import (
 )
 
 var (
-	createCmd = &cobra.Command{
-		Use:   "create [template-name]",
-		Short: "Create a user story with tasks based on crusado templates",
+	ApplyCmd = &cobra.Command{
+		Use:   "apply [template-name]",
+		Short: "Apply a user story with tasks based on crusado templates",
 		Long: `Allows you to create a user story from the template specified by the argument
 given to the command. Able to execute in dry-run mode, if you don't actually
 want to create any workitems in Azure DevOps.`,
 		Args: cobra.ExactArgs(1),
-		Run:  Create,
+		Run:  Apply,
 	}
 )
 
@@ -32,12 +32,10 @@ var (
 
 func init() {
 	// TODO change the default to false at some point, it's the more sensible default for actual usage
-	createCmd.PersistentFlags().BoolVar(&dryRunFlag, "dry-run", true, "if set to true, crusado doesn't actually create work items in Azure DevOps")
-
-	crusadoCmd.AddCommand(createCmd)
+	ApplyCmd.PersistentFlags().BoolVar(&dryRunFlag, "dry-run", true, "if set to true, crusado doesn't actually create work items in Azure DevOps")
 }
 
-func Create(cmd *cobra.Command, args []string) {
+func Apply(cmd *cobra.Command, args []string) {
 	// TODO implement proper contexts
 	ctx := context.Background()
 
