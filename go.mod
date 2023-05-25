@@ -6,6 +6,7 @@ require (
 	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/spf13/cobra v1.7.0
 	github.com/thediveo/klo v1.0.2
+	github.com/yuin/goldmark v1.5.4
 	gopkg.in/yaml.v3 v3.0.1
 )
 

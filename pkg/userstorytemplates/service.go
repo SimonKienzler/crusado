@@ -1,11 +1,14 @@
 package userstorytemplates
 
 import (
+	"bytes"
 	"context"
 	"errors"
 
 	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/simonkienzler/crusado/pkg/workitems"
+
+	"github.com/yuin/goldmark"
 )
 
 var (
@@ -25,14 +28,24 @@ func (s *Service) CreateWorkitemsFromUserStoryTemplate(ctx context.Context, user
 		return err
 	}
 
-	userStory, err := s.WorkitemsService.CreateUserStory(ctx, userStoryTemplate.StoryTitle, userStoryTemplate.StoryDescription)
+	storyDescriptionHTML, err := convertMarkdownToHTML(userStoryTemplate.StoryDescription)
+	if err != nil {
+		return err
+	}
+
+	userStory, err := s.WorkitemsService.CreateUserStory(ctx, userStoryTemplate.StoryTitle, storyDescriptionHTML)
 	if err != nil {
 		return err
 	}
 
 	for i := range userStoryTemplate.Tasks {
 		task := userStoryTemplate.Tasks[i]
-		_, err = s.WorkitemsService.CreateTaskUnderneathUserStory(ctx, task.Title, task.Description, userStory)
+		taskDescriptionHTML, err := convertMarkdownToHTML(userStoryTemplate.StoryDescription)
+		if err != nil {
+			return err
+		}
+
+		_, err = s.WorkitemsService.CreateTaskUnderneathUserStory(ctx, task.Title, taskDescriptionHTML, userStory)
 		if err != nil {
 			return err
 		}
@@ -50,4 +63,12 @@ func (s *Service) GetUserStoryTemplateFromName(userStoryTemplateName string) (*c
 	}
 
 	return nil, errNoUserStoryTemplateFoundForName
+}
+
+func convertMarkdownToHTML(markdown string) (string, error) {
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(markdown), &buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
