@@ -1,6 +1,11 @@
 package config
 
-import "os"
+import (
+	"io/ioutil"
+	"os"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type CrusadoConfig struct {
 	OrganizationUrl            string
@@ -47,4 +52,19 @@ type UserStoryTemplate struct {
 type Task struct {
 	Title       string `yaml:"title"`
 	Description string `yaml:"description"`
+}
+
+func GetProfileFromFile(filepath string) (*Profile, error) {
+	exampleProfile, err := ioutil.ReadFile("./example/profile.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	profile := Profile{}
+	err = yaml.Unmarshal(exampleProfile, &profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &profile, nil
 }

@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/spf13/cobra"
 )
 
@@ -26,6 +28,17 @@ func listArgs(cmd *cobra.Command, args []string) error {
 }
 
 func List(cmd *cobra.Command, args []string) {
-	// TODO implement list
-	fmt.Println("hello from the list command")
+	// create profile from example
+	profile, err := config.GetProfileFromFile("./example/profile.yaml")
+	if err != nil {
+		log.Fatalf("Could not read example template file: %s", err)
+	}
+
+	fmt.Printf("Listing user story templates from profile '%s'\n\n", profile.Name)
+
+	for i := range profile.Templates {
+		template := profile.Templates[i]
+
+		fmt.Printf("- %s: %s (%d tasks)\n", template.Name, template.Description, len(template.Tasks))
+	}
 }

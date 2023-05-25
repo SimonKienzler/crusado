@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 
 	"github.com/simonkienzler/crusado/pkg/config"
@@ -13,7 +12,6 @@ import (
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/work"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v3"
 )
 
 var (
@@ -52,17 +50,12 @@ func Create(cmd *cobra.Command, args []string) {
 	}
 
 	// create profile from example
-	exampleProfile, err := ioutil.ReadFile("./example/profile.yaml")
-	if err != nil {
-		log.Fatalf("Could not read example template file: %s", err)
-	}
-
-	profile := config.Profile{}
-	yaml.Unmarshal(exampleProfile, &profile)
+	profile, err := config.GetProfileFromFile("./example/profile.yaml")
+	log.Fatalf("Could not read example template file: %s", err)
 
 	userStoryTemplatesService := &userstorytemplates.Service{
 		WorkitemsService: *workitemsService,
-		Profile:          profile,
+		Profile:          *profile,
 	}
 
 	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, "example-user-story-template"); err != nil {
