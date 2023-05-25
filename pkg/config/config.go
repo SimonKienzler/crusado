@@ -42,16 +42,16 @@ type Profile struct {
 }
 
 type UserStoryTemplate struct {
-	Name             string `yaml:"name"`
-	Description      string `yaml:"description"`
-	StoryTitle       string `yaml:"storyTitle"`
-	StoryDescription string `yaml:"storyDescription"`
-	Tasks            []Task `yaml:"tasks"`
+	Name             string `yaml:"name" json:"name"`
+	Description      string `yaml:"description" json:"description"`
+	StoryTitle       string `yaml:"storyTitle" json:"storyTitle"`
+	StoryDescription string `yaml:"storyDescription" json:"storyDescription"`
+	Tasks            []Task `yaml:"tasks" json:"tasks"`
 }
 
 type Task struct {
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
+	Title       string `yaml:"title" json:"title"`
+	Description string `yaml:"description" json:"description"`
 }
 
 func GetProfileFromFile(filepath string) (*Profile, error) {

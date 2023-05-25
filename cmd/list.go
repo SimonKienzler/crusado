@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/spf13/cobra"
+	"github.com/thediveo/klo"
 )
 
 var (
@@ -18,7 +19,13 @@ var (
 	}
 )
 
+var (
+	outputFlag string
+)
+
 func init() {
+	listCmd.PersistentFlags().StringVarP(&outputFlag, "output", "o", "", "define the output format: [wide, yaml, json, jsonpath]")
+
 	crusadoCmd.AddCommand(listCmd)
 }
 
@@ -32,13 +39,19 @@ func List(cmd *cobra.Command, args []string) {
 	profile, err := config.GetProfileFromFile("./example/profile.yaml")
 	if err != nil {
 		log.Fatalf("Could not read example template file: %s", err)
+		return
 	}
 
-	fmt.Printf("Listing user story templates from profile '%s'\n\n", profile.Name)
-
-	for i := range profile.Templates {
-		template := profile.Templates[i]
-
-		fmt.Printf("- %s: %s (%d tasks)\n", template.Name, template.Description, len(template.Tasks))
+	// Create a table printer with custom columns, to be filled from fields
+	// of the objects (namely, Name, Foo, and Bar fields).
+	myspecs := klo.Specs{
+		DefaultColumnSpec: "NAME:{.Name},DESCRIPTION:{.Description}",
+		WideColumnSpec:    "NAME:{.Name},DESCRIPTION:{.Description},STORY TITLE:{.StoryTitle},TASKS:{.Tasks[*].Title}",
 	}
+	prn, err := klo.PrinterFromFlag(outputFlag, &myspecs)
+	if err != nil {
+		panic(err)
+	}
+	// Use a table sorter and tell it to sort by the Name field of our column objects.
+	prn.Fprint(os.Stdout, profile.Templates)
 }
