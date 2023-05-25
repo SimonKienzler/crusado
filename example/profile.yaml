@@ -1,9 +1,19 @@
 name: example-profile
 templates:
-  - name: example-user-story-template
+  - name: example
     description: This template demonstrates the capabilities of crusado.
     storyTitle: Try out crusado
-    storyDescription: crusado looks like a great tool. We should test it.
+    storyDescription: |
+      **Testing crusado...**
+      
+      * Todo 1
+      * Todo 2
+      * Todo 3
+
+      [Link](https://example.com)
+
+      1. test
+      2. even more
     tasks:
       - title: Download crusado
         description: step 1
