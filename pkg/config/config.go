@@ -31,6 +31,11 @@ type ProjectConfig struct {
 	AreaPath      string
 }
 
+type Profile struct {
+	Name      string              `yaml:"name"`
+	Templates []UserStoryTemplate `yaml:"templates"`
+}
+
 type UserStoryTemplate struct {
 	Name             string `yaml:"name"`
 	Description      string `yaml:"description"`

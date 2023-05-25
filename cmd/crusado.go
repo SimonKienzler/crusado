@@ -48,26 +48,27 @@ func Crusado(cmd *cobra.Command, args []string) {
 	// TODO implement proper contexts
 	ctx := context.Background()
 
-	// create user story template struct
-	userStoryTemplateExample, err := ioutil.ReadFile("./example/userStoryTemplate.yaml")
-	if err != nil {
-		log.Fatalf("Could not read example template file: %s", err)
-	}
-
-	userStoryTemplate := config.UserStoryTemplate{}
-	yaml.Unmarshal(userStoryTemplateExample, &userStoryTemplate)
-
 	workitemsService, err := createWorkitemsService(ctx, dryRunFlag)
 	if err != nil {
 		log.Fatalf("Error during service creation: %s", err)
 	}
 
-	userStoryTemplatesService := &userstorytemplates.Service{
-		WorkitemsService: *workitemsService,
+	// create profile from example
+	exampleProfile, err := ioutil.ReadFile("./example/profile.yaml")
+	if err != nil {
+		log.Fatalf("Could not read example template file: %s", err)
 	}
 
-	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, userStoryTemplate); err != nil {
-		log.Fatalf("Error during user story template creation: %s", err)
+	profile := config.Profile{}
+	yaml.Unmarshal(exampleProfile, &profile)
+
+	userStoryTemplatesService := &userstorytemplates.Service{
+		WorkitemsService: *workitemsService,
+		Profile:          profile,
+	}
+
+	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, "example-user-story-template"); err != nil {
+		log.Fatalf("Error during user story creation: %s", err)
 	}
 }
 
