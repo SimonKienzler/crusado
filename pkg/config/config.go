@@ -38,8 +38,17 @@ type ProjectConfig struct {
 }
 
 type Profile struct {
-	Name      string              `yaml:"name"`
-	Templates []UserStoryTemplate `yaml:"templates"`
+	Templates []UserStoryTemplate `yaml:"templates" json:"templates"`
+}
+
+type ProfileConfig struct {
+	Name     string `yaml:"name" json:"name"`
+	FilePath string `yaml:"filePath" json:"filePath"`
+}
+
+var ProfileConfigPrinterSpecs = klo.Specs{
+	DefaultColumnSpec: "NAME:{.Name},FILEPATH:{.FilePath}",
+	WideColumnSpec:    "NAME:{.Name},FILEPATH:{.FilePath}",
 }
 
 type UserStoryTemplate struct {
