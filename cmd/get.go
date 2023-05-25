@@ -14,10 +14,12 @@ import (
 var (
 	getCmd = &cobra.Command{
 		Use:   "get [template-name]",
-		Short: "TODO",
-		Long:  `TODO`,
-		Args:  cobra.MaximumNArgs(1),
-		Run:   Get,
+		Short: "Take a look at crusado templates, either as a list or by name",
+		Long: `Allows you to list available user story templates  when called without
+arguments. Provide an exact template name as an argument to see detailed
+information about this specific template. You can specify an output format.`,
+		Args: cobra.MaximumNArgs(1),
+		Run:  Get,
 	}
 )
 

@@ -17,10 +17,12 @@ import (
 var (
 	createCmd = &cobra.Command{
 		Use:   "create [template-name]",
-		Short: "TODO",
-		Long:  `TODO`,
-		Args:  cobra.ExactArgs(1),
-		Run:   Create,
+		Short: "Create a user story with tasks based on crusado templates",
+		Long: `Allows you to create a user story from the template specified by the argument
+given to the command. Able to execute in dry-run mode, if you don't actually
+want to create any workitems in Azure DevOps.`,
+		Args: cobra.ExactArgs(1),
+		Run:  Create,
 	}
 )
 
@@ -44,6 +46,7 @@ func Create(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error during service creation: %s", err)
 	}
 
+	// create profile from example
 	// create profile from example
 	profile, err := config.GetProfileFromFile("./example/profile.yaml")
 	if err != nil {

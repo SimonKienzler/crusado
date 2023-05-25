@@ -9,9 +9,11 @@ import (
 var (
 	crusadoCmd = &cobra.Command{
 		Use:   "crusado",
-		Short: "TODO",
-		Long:  `TODO`,
-		Run:   Crusado,
+		Short: "crusado allows you to quickly create user stories and tasks from predefined templates",
+		Long: `crusado uses a list of custom, predefined user story templates (including 
+their subtasks) to let you quickly create instances of those templates in
+your current iteration. You can even use Markdown syntax in your descriptions.`,
+		Run: Crusado,
 	}
 )
 
