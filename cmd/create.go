@@ -16,10 +16,10 @@ import (
 
 var (
 	createCmd = &cobra.Command{
-		Use:   "create",
+		Use:   "create [template-name]",
 		Short: "TODO",
 		Long:  `TODO`,
-		Args:  createArgs,
+		Args:  cobra.ExactArgs(1),
 		Run:   Create,
 	}
 )
@@ -35,11 +35,6 @@ func init() {
 	crusadoCmd.AddCommand(createCmd)
 }
 
-func createArgs(cmd *cobra.Command, args []string) error {
-	// TODO validate args
-	return nil
-}
-
 func Create(cmd *cobra.Command, args []string) {
 	// TODO implement proper contexts
 	ctx := context.Background()
@@ -51,14 +46,18 @@ func Create(cmd *cobra.Command, args []string) {
 
 	// create profile from example
 	profile, err := config.GetProfileFromFile("./example/profile.yaml")
-	log.Fatalf("Could not read example template file: %s", err)
+	if err != nil {
+		log.Fatalf("Could not read example template file: %s", err)
+	}
 
 	userStoryTemplatesService := &userstorytemplates.Service{
 		WorkitemsService: *workitemsService,
 		Profile:          *profile,
 	}
 
-	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, "example-user-story-template"); err != nil {
+	templateName := args[0]
+
+	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, templateName); err != nil {
 		log.Fatalf("Error during user story creation: %s", err)
 	}
 }
