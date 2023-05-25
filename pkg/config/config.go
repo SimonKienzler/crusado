@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/thediveo/klo"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -55,7 +56,7 @@ type Task struct {
 }
 
 func GetProfileFromFile(filepath string) (*Profile, error) {
-	exampleProfile, err := ioutil.ReadFile("./example/profile.yaml")
+	exampleProfile, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return nil, err
 	}
@@ -67,4 +68,9 @@ func GetProfileFromFile(filepath string) (*Profile, error) {
 	}
 
 	return &profile, nil
+}
+
+var TemplatePrinterSpecs = klo.Specs{
+	DefaultColumnSpec: "NAME:{.Name},DESCRIPTION:{.Description}",
+	WideColumnSpec:    "NAME:{.Name},DESCRIPTION:{.Description},STORY TITLE:{.StoryTitle},TASKS:{.Tasks[*].Title}",
 }
