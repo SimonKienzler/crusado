@@ -2,10 +2,20 @@ package config
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/thediveo/klo"
 	yaml "gopkg.in/yaml.v3"
+)
+
+const (
+	OrganizationUrlEnvVarKey     = "CRUSADO_AZURE_ORG_URL"
+	PersonalAccessTokenEnvVarKey = "CRUSADO_AZURE_PAT"
+	ProjectNameEnvVarKey         = "CRUSADO_AZURE_PROJECT_NAME"
+	IterationPathEnvVarKey       = "CRUSADO_ITERATION_PATH"
+	ProfileFilePathEnvVarKey     = "CRUSADO_PROFILE_FILE_PATH"
+	UseCurrentIterationEnvVarKey = "CRUSADO_USE_CURRENT_ITERATION"
 )
 
 type CrusadoConfig struct {
@@ -18,21 +28,51 @@ type CrusadoConfig struct {
 }
 
 func GetConfig() CrusadoConfig {
-	organizationUrl := os.Getenv("CRUSADO_AZURE_ORG_URL")
-	personalAccessToken := os.Getenv("CRUSADO_AZURE_PAT")
-	projectName := os.Getenv("CRUSADO_AZURE_PROJECT_NAME")
-	currentIteration := os.Getenv("CRUSADO_ITERATION_PATH")
-	profileFilePath := os.Getenv("CRUSADO_PROFILE_FILE_PATH")
-	useCurrentIteration := os.Getenv("CRUSADO_USE_CURRENT_ITERATION") == "true"
+	cfg := CrusadoConfig{}
+	incomplete := false
 
-	return CrusadoConfig{
-		OrganizationUrl:     organizationUrl,
-		PersonalAccessToken: personalAccessToken,
-		ProjectName:         projectName,
-		IterationPath:       currentIteration,
-		UseCurrentIteration: useCurrentIteration,
-		ProfileFilePath:     profileFilePath,
+	if organizationUrl, exists := os.LookupEnv(OrganizationUrlEnvVarKey); exists {
+		cfg.OrganizationUrl = organizationUrl
+	} else {
+		incomplete = true
+		log.Printf("Required environment variable %s is not set", OrganizationUrlEnvVarKey)
 	}
+	if personalAccessToken, exists := os.LookupEnv(PersonalAccessTokenEnvVarKey); exists {
+		cfg.PersonalAccessToken = personalAccessToken
+	} else {
+		incomplete = true
+		log.Printf("Required environment variable %s is not set", PersonalAccessTokenEnvVarKey)
+	}
+	if projectName, exists := os.LookupEnv(ProjectNameEnvVarKey); exists {
+		cfg.ProjectName = projectName
+	} else {
+		incomplete = true
+		log.Printf("Required environment variable %s is not set", ProjectNameEnvVarKey)
+	}
+	if iterationPath, exists := os.LookupEnv(IterationPathEnvVarKey); exists {
+		cfg.IterationPath = iterationPath
+	} else {
+		incomplete = true
+		log.Printf("Required environment variable %s is not set", IterationPathEnvVarKey)
+	}
+	if profileFilePath, exists := os.LookupEnv(ProfileFilePathEnvVarKey); exists {
+		cfg.ProfileFilePath = profileFilePath
+	} else {
+		incomplete = true
+		log.Printf("Required environment variable %s is not set", ProfileFilePathEnvVarKey)
+	}
+	if useCurrentIteration, exists := os.LookupEnv(UseCurrentIterationEnvVarKey); exists {
+		cfg.UseCurrentIteration = useCurrentIteration == "true"
+	} else {
+		incomplete = true
+		log.Printf("Required environment variable %s is not set", UseCurrentIterationEnvVarKey)
+	}
+
+	if incomplete {
+		os.Exit(1)
+	}
+
+	return cfg
 }
 
 type ProjectConfig struct {
