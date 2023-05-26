@@ -19,7 +19,7 @@ var (
 // creates them using a workitems service.
 type Service struct {
 	WorkitemsService workitems.Service
-	Profile          config.Profile
+	TemplateList     config.TemplateList
 }
 
 func (s *Service) CreateWorkitemsFromUserStoryTemplate(ctx context.Context, userStoryTemplateName string) error {
@@ -55,8 +55,8 @@ func (s *Service) CreateWorkitemsFromUserStoryTemplate(ctx context.Context, user
 }
 
 func (s *Service) GetUserStoryTemplateFromName(userStoryTemplateName string) (*config.UserStoryTemplate, error) {
-	for i := range s.Profile.Templates {
-		template := s.Profile.Templates[i]
+	for i := range s.TemplateList.Templates {
+		template := s.TemplateList.Templates[i]
 		if template.Name == userStoryTemplateName {
 			return &template, nil
 		}

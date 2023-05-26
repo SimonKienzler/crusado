@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/simonkienzler/crusado/pkg/config"
+	"github.com/simonkienzler/crusado/pkg/validator"
 	"github.com/spf13/cobra"
 )
 
@@ -27,12 +28,21 @@ func List(cmd *cobra.Command, args []string) {
 	profileConfigs := []config.ProfileConfig{
 		{
 			Name:     "example-profile",
-			FilePath: "/somewhere/on/disk/profile.yaml",
+			FilePath: "./example/profile.yaml",
 		},
 		{
 			Name:     "other-profile",
 			FilePath: "/path/to/other-profile.yaml",
 		},
+		{
+			Name: "invalid",
+		},
+	}
+
+	profiles := []config.Profile{}
+
+	for i := range profileConfigs {
+		profiles = append(profiles, convertToProfile(profileConfigs[i]))
 	}
 
 	printer, err := getPrinter(outputFlag)
@@ -40,8 +50,33 @@ func List(cmd *cobra.Command, args []string) {
 		log.Fatalf("Could not get printer: %q", err)
 	}
 
-	printer.Fprint(os.Stdout, profileConfigs)
+	printer.Fprint(os.Stdout, profiles)
 	if err != nil {
 		log.Fatalf("Could not print profiles: %q", err)
 	}
+}
+
+func convertToProfile(profileConfig config.ProfileConfig) config.Profile {
+	profile := config.Profile{}
+
+	profile.Name = profileConfig.Name
+	profile.FilePath = profileConfig.FilePath
+
+	errs := validator.ValidateProfileConfig(profileConfig)
+
+	if len(errs) != 0 {
+		profile.Valid = false
+		return profile
+	}
+
+	templateList, err := config.GetTemplateListFromFile(profile.FilePath)
+	if err != nil {
+		profile.Valid = false
+		return profile
+	}
+
+	profile.Valid = true
+	profile.NumberOfTemplates = len(templateList.Templates)
+
+	return profile
 }

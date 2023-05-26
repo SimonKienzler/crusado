@@ -26,5 +26,5 @@ func init() {
 }
 
 func getPrinter(outputFormat string) (klo.ValuePrinter, error) {
-	return klo.PrinterFromFlag(outputFormat, &config.ProfileConfigPrinterSpecs)
+	return klo.PrinterFromFlag(outputFormat, &config.ProfilePrinterSpecs)
 }

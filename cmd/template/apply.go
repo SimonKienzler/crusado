@@ -44,16 +44,15 @@ func Apply(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error during service creation: %s", err)
 	}
 
-	// create profile from example
-	// create profile from example
-	profile, err := config.GetProfileFromFile("./example/profile.yaml")
+	// create templateList from example
+	templateList, err := config.GetTemplateListFromFile("./example/profile.yaml")
 	if err != nil {
 		log.Fatalf("Could not read example template file: %s", err)
 	}
 
 	userStoryTemplatesService := &userstorytemplates.Service{
 		WorkitemsService: *workitemsService,
-		Profile:          *profile,
+		TemplateList:     *templateList,
 	}
 
 	templateName := args[0]

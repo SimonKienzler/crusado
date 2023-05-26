@@ -26,23 +26,23 @@ func init() {
 
 func Show(cmd *cobra.Command, args []string) {
 
-	// create profile from example
-	profile, err := config.GetProfileFromFile("./example/profile.yaml")
+	// create templateList from example
+	templateList, err := config.GetTemplateListFromFile("./example/profile.yaml")
 	if err != nil {
 		log.Fatalf("Could not read example template file: %q", err)
 		return
 	}
 
-	err = GetByName(profile, args[0], outputFlag)
+	err = GetByName(templateList, args[0], outputFlag)
 	if err != nil {
 		log.Fatalf("Could not get template by name '%s': %q", args[0], err)
 	}
 	return
 }
 
-func GetByName(profile *config.Profile, name, outputFormat string) error {
+func GetByName(profile *config.TemplateList, name, outputFormat string) error {
 	ustService := userstorytemplates.Service{
-		Profile: *profile,
+		TemplateList: *profile,
 	}
 
 	userStoryTemplate, err := ustService.GetUserStoryTemplateFromName(name)

@@ -26,7 +26,7 @@ func init() {
 func List(cmd *cobra.Command, args []string) {
 
 	// create profile from example
-	profile, err := config.GetProfileFromFile("./example/profile.yaml")
+	profile, err := config.GetTemplateListFromFile("./example/profile.yaml")
 	if err != nil {
 		log.Fatalf("Could not read example template file: %q", err)
 		return
@@ -38,7 +38,7 @@ func List(cmd *cobra.Command, args []string) {
 	}
 }
 
-func GetAll(profile *config.Profile, outputFormat string) error {
+func GetAll(profile *config.TemplateList, outputFormat string) error {
 	printer, err := getPrinter(outputFormat)
 	if err != nil {
 		return err

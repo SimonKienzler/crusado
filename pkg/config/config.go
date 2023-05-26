@@ -37,8 +37,15 @@ type ProjectConfig struct {
 	AreaPath      string
 }
 
-type Profile struct {
+type TemplateList struct {
 	Templates []UserStoryTemplate `yaml:"templates" json:"templates"`
+}
+
+type Profile struct {
+	Name              string `yaml:"name" json:"name"`
+	FilePath          string `yaml:"filePath" json:"filePath"`
+	Valid             bool   `yaml:"valid" json:"valid"`
+	NumberOfTemplates int    `yaml:"numberOfTemplates" json:"numberOfTemplates"`
 }
 
 type ProfileConfig struct {
@@ -46,9 +53,9 @@ type ProfileConfig struct {
 	FilePath string `yaml:"filePath" json:"filePath"`
 }
 
-var ProfileConfigPrinterSpecs = klo.Specs{
-	DefaultColumnSpec: "NAME:{.Name},FILEPATH:{.FilePath}",
-	WideColumnSpec:    "NAME:{.Name},FILEPATH:{.FilePath}",
+var ProfilePrinterSpecs = klo.Specs{
+	DefaultColumnSpec: "NAME:{.Name},FILEPATH:{.FilePath},VALID:{.Valid}",
+	WideColumnSpec:    "NAME:{.Name},FILEPATH:{.FilePath},VALID:{.Valid},TEMPLATES:{.NumberOfTemplates}",
 }
 
 type UserStoryTemplate struct {
@@ -64,13 +71,13 @@ type Task struct {
 	Description string `yaml:"description" json:"description"`
 }
 
-func GetProfileFromFile(filepath string) (*Profile, error) {
+func GetTemplateListFromFile(filepath string) (*TemplateList, error) {
 	exampleProfile, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return nil, err
 	}
 
-	profile := Profile{}
+	profile := TemplateList{}
 	err = yaml.Unmarshal(exampleProfile, &profile)
 	if err != nil {
 		return nil, err
