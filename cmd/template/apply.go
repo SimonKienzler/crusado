@@ -39,13 +39,15 @@ func Apply(cmd *cobra.Command, args []string) {
 	// TODO implement proper contexts
 	ctx := context.Background()
 
+	cfg := config.GetConfig()
+
 	workitemsService, err := createWorkitemsService(ctx, dryRunFlag)
 	if err != nil {
 		log.Fatalf("Error during service creation: %s", err)
 	}
 
 	// create templateList from example
-	templateList, err := config.GetTemplateListFromFile("./example/profile.yaml")
+	templateList, err := config.GetTemplateListFromFile(cfg.ProfileFilePath)
 	if err != nil {
 		log.Fatalf("Could not read example template file: %s", err)
 	}
@@ -63,7 +65,7 @@ func Apply(cmd *cobra.Command, args []string) {
 }
 
 func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems.Service, error) {
-	crusadoConfig := config.GetConfig(true)
+	crusadoConfig := config.GetConfig()
 
 	// create a connection to the organization
 	connection := azuredevops.NewPatConnection(crusadoConfig.OrganizationUrl, crusadoConfig.PersonalAccessToken)
@@ -92,7 +94,7 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 
 	// get current iteration, either from env var or from the API
 	workitemsService.ProjectConfig.IterationPath = crusadoConfig.IterationPath
-	if !crusadoConfig.UseIterationPathFromEnvVar {
+	if crusadoConfig.UseCurrentIteration {
 		log.Print("Getting path of current iteration...")
 
 		currentIteration, err := workitemsService.GetCurrentIteration(ctx)

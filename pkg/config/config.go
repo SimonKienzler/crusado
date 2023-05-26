@@ -9,25 +9,29 @@ import (
 )
 
 type CrusadoConfig struct {
-	OrganizationUrl            string
-	PersonalAccessToken        string
-	ProjectName                string
-	IterationPath              string
-	UseIterationPathFromEnvVar bool
+	OrganizationUrl     string
+	PersonalAccessToken string
+	ProjectName         string
+	IterationPath       string
+	UseCurrentIteration bool
+	ProfileFilePath     string
 }
 
-func GetConfig(useIterationPathFromEnvVar bool) CrusadoConfig {
-	organizationUrl := os.Getenv("AZURE_ORG_URL")
-	personalAccessToken := os.Getenv("AZURE_PAT")
-	projectName := os.Getenv("AZURE_PROJECT_NAME")
-	currentIteration := os.Getenv("ITERATION_PATH")
+func GetConfig() CrusadoConfig {
+	organizationUrl := os.Getenv("CRUSADO_AZURE_ORG_URL")
+	personalAccessToken := os.Getenv("CRUSADO_AZURE_PAT")
+	projectName := os.Getenv("CRUSADO_AZURE_PROJECT_NAME")
+	currentIteration := os.Getenv("CRUSADO_ITERATION_PATH")
+	profileFilePath := os.Getenv("CRUSADO_PROFILE_FILE_PATH")
+	useCurrentIteration := os.Getenv("CRUSADO_USE_CURRENT_ITERATION") == "true"
 
 	return CrusadoConfig{
-		OrganizationUrl:            organizationUrl,
-		PersonalAccessToken:        personalAccessToken,
-		ProjectName:                projectName,
-		IterationPath:              currentIteration,
-		UseIterationPathFromEnvVar: useIterationPathFromEnvVar,
+		OrganizationUrl:     organizationUrl,
+		PersonalAccessToken: personalAccessToken,
+		ProjectName:         projectName,
+		IterationPath:       currentIteration,
+		UseCurrentIteration: useCurrentIteration,
+		ProfileFilePath:     profileFilePath,
 	}
 }
 

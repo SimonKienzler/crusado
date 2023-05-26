@@ -24,9 +24,10 @@ func init() {
 }
 
 func List(cmd *cobra.Command, args []string) {
+	cfg := config.GetConfig()
 
 	// create profile from example
-	profile, err := config.GetTemplateListFromFile("./example/profile.yaml")
+	profile, err := config.GetTemplateListFromFile(cfg.ProfileFilePath)
 	if err != nil {
 		log.Fatalf("Could not read example template file: %q", err)
 		return

@@ -25,17 +25,13 @@ func init() {
 
 func List(cmd *cobra.Command, args []string) {
 	// TODO read the list of availble profiles from a well-known source, e.g. $HOME/.crusado/profiles.yaml
+	// currently we only support one profile
+	cfg := config.GetConfig()
+
 	profileConfigs := []config.ProfileConfig{
 		{
-			Name:     "example-profile",
-			FilePath: "./example/profile.yaml",
-		},
-		{
-			Name:     "other-profile",
-			FilePath: "/path/to/other-profile.yaml",
-		},
-		{
-			Name: "invalid",
+			Name:     "default",
+			FilePath: cfg.ProfileFilePath,
 		},
 	}
 
