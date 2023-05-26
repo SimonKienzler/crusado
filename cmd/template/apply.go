@@ -2,12 +2,14 @@ package template
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/simonkienzler/crusado/pkg/userstorytemplates"
 	"github.com/simonkienzler/crusado/pkg/workitems"
 
+	"github.com/fatih/color"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/work"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
@@ -52,16 +54,12 @@ func Apply(cmd *cobra.Command, args []string) {
 		log.Fatalf("Could not read example template file: %s", err)
 	}
 
-	userStoryTemplatesService := &userstorytemplates.Service{
+	ustService := &userstorytemplates.Service{
 		WorkitemsService: *workitemsService,
 		TemplateList:     *templateList,
 	}
 
-	templateName := args[0]
-
-	if err := userStoryTemplatesService.CreateWorkitemsFromUserStoryTemplate(ctx, templateName); err != nil {
-		log.Fatalf("Error during user story creation: %s", err)
-	}
+	ApplyFlow(ctx, ustService, args[0], dryRunFlag)
 }
 
 func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems.Service, error) {
@@ -95,8 +93,6 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 	// get current iteration, either from env var or from the API
 	workitemsService.ProjectConfig.IterationPath = crusadoConfig.IterationPath
 	if crusadoConfig.UseCurrentIteration {
-		log.Print("Getting path of current iteration...")
-
 		currentIteration, err := workitemsService.GetCurrentIteration(ctx)
 		if err != nil {
 			return nil, err
@@ -104,9 +100,70 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 
 		log.Printf("Got current iteration path: %+v", *currentIteration.Path)
 		workitemsService.ProjectConfig.IterationPath = *currentIteration.Path
-	} else {
-		log.Printf("Using configured iteration path: %+v", workitemsService.ProjectConfig.IterationPath)
 	}
 
 	return &workitemsService, nil
+}
+
+func ApplyFlow(ctx context.Context, service *userstorytemplates.Service, templateName string, dryRun bool) {
+	userStoryTemplate, err := service.GetUserStoryTemplateFromName(templateName)
+	if err != nil {
+		log.Fatalf("Could not get user story template: %s", err)
+	}
+
+	storyDescriptionHTML, err := userstorytemplates.ConvertMarkdownToHTML(userStoryTemplate.StoryDescription)
+	if err != nil {
+		log.Fatalf("Could not convert story desription from Markdown to HTML: %s", err)
+	}
+
+	userStory, err := service.WorkitemsService.CreateUserStory(ctx, userStoryTemplate.StoryTitle, storyDescriptionHTML)
+	if err != nil {
+		log.Fatalf("Could not create user story: %s", err)
+	}
+
+	coloredSuccessMessagePrinter(workitems.UserStoryType, userStoryTemplate.StoryTitle, dryRun)
+
+	for i := range userStoryTemplate.Tasks {
+		task := userStoryTemplate.Tasks[i]
+		taskDescriptionHTML, err := userstorytemplates.ConvertMarkdownToHTML(userStoryTemplate.StoryDescription)
+		if err != nil {
+			log.Fatalf("Could not convert task desription from Markdown to HTML: %s", err)
+		}
+
+		_, err = service.WorkitemsService.CreateTaskUnderneathUserStory(ctx, task.Title, taskDescriptionHTML, userStory)
+		if err != nil {
+			log.Fatalf("Could not create task: %s", err)
+		}
+
+		coloredSuccessMessagePrinter(workitems.TaskType, task.Title, dryRun)
+	}
+}
+
+func coloredSuccessMessagePrinter(itemType, title string, dryRun bool) {
+	const (
+		storyIcon = "📖"
+		bugIcon   = "🐛"
+		taskIcon  = "📋"
+	)
+
+	dryRunHint := ""
+
+	if dryRun {
+		dryRunHint = " (dry-run)"
+	}
+
+	icon := ""
+	txtColor := color.FgCyan
+
+	switch itemType {
+	case workitems.UserStoryType:
+		icon = storyIcon
+		txtColor = color.FgGreen
+	case workitems.TaskType:
+		icon = "   " + taskIcon
+	}
+
+	fmt.Print(icon + " " + itemType + " ")
+	color.New(txtColor).Printf(title)
+	fmt.Printf(" created successfully%s\n", dryRunHint)
 }

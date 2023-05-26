@@ -4,13 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/simonkienzler/crusado/pkg/config"
 
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/webapi"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/work"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
+)
+
+const (
+	UserStoryType = "User Story"
+	TaskType      = "Task"
 )
 
 // addOp is a shortcut variable for the Add operation.
@@ -45,7 +49,7 @@ func (s *Service) GetCurrentIteration(ctx context.Context) (*work.TeamSettingsIt
 
 func (s *Service) CreateUserStory(ctx context.Context, title, description string) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectConfig.Name
-	workItemType := "User Story"
+	workItemType := UserStoryType
 	validateOnly := s.DryRun
 	document := s.buildBasicWorkItemJSONPatchDocument(title, description)
 
@@ -59,7 +63,7 @@ func (s *Service) CreateUserStory(ctx context.Context, title, description string
 
 func (s *Service) CreateTaskUnderneathUserStory(ctx context.Context, title, description string, parent *workitemtracking.WorkItem) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectConfig.Name
-	workItemType := "Task"
+	workItemType := TaskType
 	validateOnly := s.DryRun
 	document := s.buildBasicWorkItemJSONPatchDocument(title, description)
 
@@ -67,14 +71,17 @@ func (s *Service) CreateTaskUnderneathUserStory(ctx context.Context, title, desc
 		return nil, errors.New("cannot create task underneath user story without parent")
 	}
 
-	log.Printf("Parent URL: %s", *parent.Url)
-
-	document = append(document, buildJSONPatchOperation(
-		addOp, "/relations/-", workitemtracking.WorkItemRelation{
-			Url: parent.Url,
-			Rel: stringPointer("System.LinkTypes.Hierarchy-Reverse"),
-		},
-	))
+	// if we're in dry-run mode, don't specify the parent-child relationship,
+	// because this would trigger an existence check on the parent. This fails
+	// and the command would error.
+	if !validateOnly {
+		document = append(document, buildJSONPatchOperation(
+			addOp, "/relations/-", workitemtracking.WorkItemRelation{
+				Url: parent.Url,
+				Rel: stringPointer("System.LinkTypes.Hierarchy-Reverse"),
+			},
+		))
+	}
 
 	return s.WorkitemClient.CreateWorkItem(ctx, workitemtracking.CreateWorkItemArgs{
 		Document:     &document,

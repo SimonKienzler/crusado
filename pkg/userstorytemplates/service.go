@@ -23,33 +23,6 @@ type Service struct {
 }
 
 func (s *Service) CreateWorkitemsFromUserStoryTemplate(ctx context.Context, userStoryTemplateName string) error {
-	userStoryTemplate, err := s.GetUserStoryTemplateFromName(userStoryTemplateName)
-	if err != nil {
-		return err
-	}
-
-	storyDescriptionHTML, err := convertMarkdownToHTML(userStoryTemplate.StoryDescription)
-	if err != nil {
-		return err
-	}
-
-	userStory, err := s.WorkitemsService.CreateUserStory(ctx, userStoryTemplate.StoryTitle, storyDescriptionHTML)
-	if err != nil {
-		return err
-	}
-
-	for i := range userStoryTemplate.Tasks {
-		task := userStoryTemplate.Tasks[i]
-		taskDescriptionHTML, err := convertMarkdownToHTML(userStoryTemplate.StoryDescription)
-		if err != nil {
-			return err
-		}
-
-		_, err = s.WorkitemsService.CreateTaskUnderneathUserStory(ctx, task.Title, taskDescriptionHTML, userStory)
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
@@ -65,7 +38,7 @@ func (s *Service) GetUserStoryTemplateFromName(userStoryTemplateName string) (*c
 	return nil, errNoUserStoryTemplateFoundForName
 }
 
-func convertMarkdownToHTML(markdown string) (string, error) {
+func ConvertMarkdownToHTML(markdown string) (string, error) {
 	var buf bytes.Buffer
 	if err := goldmark.Convert([]byte(markdown), &buf); err != nil {
 		return "", err
