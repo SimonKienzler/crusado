@@ -8,11 +8,12 @@ import (
 
 var (
 	RootCmd = &cobra.Command{
-		Use:   "profile",
-		Short: "Bundles subcommands that manage crusado profiles",
-		Long:  `Use the profile subcommands to list and chose crusado profiles`,
-		Args:  cobra.NoArgs,
-		Run:   nil,
+		Use:     "profile",
+		Aliases: []string{"p"},
+		Short:   "Bundles subcommands that manage crusado profiles",
+		Long:    `Use the profile subcommands to list and chose crusado profiles`,
+		Args:    cobra.NoArgs,
+		Run:     nil,
 	}
 )
 

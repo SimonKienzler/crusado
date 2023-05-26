@@ -10,11 +10,12 @@ import (
 
 var (
 	RootCmd = &cobra.Command{
-		Use:   "template",
-		Short: "Bundles subcommands that manage crusado templates",
-		Long:  `Use the template subcommands to list, show and apply templates.`,
-		Args:  cobra.NoArgs,
-		Run:   nil,
+		Use:     "template",
+		Aliases: []string{"t"},
+		Short:   "Bundles subcommands that manage crusado templates",
+		Long:    `Use the template subcommands to list, show and apply templates.`,
+		Args:    cobra.NoArgs,
+		Run:     nil,
 	}
 )
 
