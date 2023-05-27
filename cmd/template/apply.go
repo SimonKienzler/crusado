@@ -7,6 +7,7 @@ import (
 
 	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/simonkienzler/crusado/pkg/userstorytemplates"
+	"github.com/simonkienzler/crusado/pkg/validator"
 	"github.com/simonkienzler/crusado/pkg/workitems"
 
 	"github.com/fatih/color"
@@ -52,6 +53,11 @@ func Apply(cmd *cobra.Command, args []string) {
 	templateList, err := config.GetTemplateListFromFile(cfg.ProfileFilePath)
 	if err != nil {
 		log.Fatalf("Could not read example template file: %s", err)
+	}
+
+	err = validator.ValidateTemplateList(templateList)
+	if err != nil {
+		log.Fatalf("Invalid profile: %s", err)
 	}
 
 	ustService := &userstorytemplates.Service{

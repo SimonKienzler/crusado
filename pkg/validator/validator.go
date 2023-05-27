@@ -2,18 +2,20 @@ package validator
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/simonkienzler/crusado/pkg/config"
 )
 
 var (
-	ErrProfileNameNotSet     = errors.New("profile doesn't have name, which is required")
-	ErrProfileFilePathNotSet = errors.New("profile doesn't have filePath, which is required")
-	ErrFileDoesNotExist      = errors.New("no file exists at the given filePath")
+	ErrProfileNameNotSet      = errors.New("profile doesn't have name, which is required")
+	ErrProfileFilePathNotSet  = errors.New("profile doesn't have filePath, which is required")
+	ErrFileDoesNotExist       = errors.New("no file exists at the given filePath")
+	ErrDuplicateTemplateNames = errors.New("duplicate names for templates in profile")
 )
 
-func ValidateProfileConfig(profile config.ProfileConfig) []error {
+func ValidateProfileConfig(profile *config.ProfileConfig) []error {
 	validationErrors := []error{}
 
 	// validate completeness
@@ -34,4 +36,20 @@ func ValidateProfileConfig(profile config.ProfileConfig) []error {
 	}
 
 	return validationErrors
+}
+
+func ValidateTemplateList(templateList *config.TemplateList) error {
+
+	templateNames := map[string]bool{}
+
+	for i := range templateList.Templates {
+		name := templateList.Templates[i].Name
+		if exists := templateNames[name]; exists {
+			return fmt.Errorf("%w: name '%s' exists at least twice", ErrDuplicateTemplateNames, name)
+		} else {
+			templateNames[name] = true
+		}
+	}
+
+	return nil
 }

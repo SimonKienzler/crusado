@@ -6,6 +6,7 @@ import (
 
 	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/simonkienzler/crusado/pkg/userstorytemplates"
+	"github.com/simonkienzler/crusado/pkg/validator"
 
 	"github.com/spf13/cobra"
 )
@@ -32,6 +33,11 @@ func Show(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("Could not read example template file: %q", err)
 		return
+	}
+
+	err = validator.ValidateTemplateList(templateList)
+	if err != nil {
+		log.Fatalf("Invalid profile: %s", err)
 	}
 
 	err = GetByName(templateList, args[0], outputFlag)

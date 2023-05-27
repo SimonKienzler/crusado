@@ -38,7 +38,7 @@ func List(cmd *cobra.Command, args []string) {
 	profiles := []config.Profile{}
 
 	for i := range profileConfigs {
-		profiles = append(profiles, convertToProfile(profileConfigs[i]))
+		profiles = append(profiles, convertToProfile(&profileConfigs[i]))
 	}
 
 	printer, err := getPrinter(outputFlag)
@@ -52,8 +52,8 @@ func List(cmd *cobra.Command, args []string) {
 	}
 }
 
-func convertToProfile(profileConfig config.ProfileConfig) config.Profile {
-	profile := config.Profile{}
+func convertToProfile(profileConfig *config.ProfileConfig) config.Profile {
+	profile := &config.Profile{}
 
 	profile.Name = profileConfig.Name
 	profile.FilePath = profileConfig.FilePath
@@ -62,17 +62,23 @@ func convertToProfile(profileConfig config.ProfileConfig) config.Profile {
 
 	if len(errs) != 0 {
 		profile.Valid = false
-		return profile
+		return *profile
 	}
 
 	templateList, err := config.GetTemplateListFromFile(profile.FilePath)
 	if err != nil {
 		profile.Valid = false
-		return profile
+		return *profile
+	}
+
+	err = validator.ValidateTemplateList(templateList)
+	if err != nil {
+		profile.Valid = false
+		return *profile
 	}
 
 	profile.Valid = true
 	profile.NumberOfTemplates = len(templateList.Templates)
 
-	return profile
+	return *profile
 }

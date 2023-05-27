@@ -121,13 +121,13 @@ func GetTemplateListFromFile(filepath string) (*TemplateList, error) {
 		return nil, err
 	}
 
-	profile := TemplateList{}
-	err = yaml.Unmarshal(exampleProfile, &profile)
+	templateList := TemplateList{}
+	err = yaml.Unmarshal(exampleProfile, &templateList)
 	if err != nil {
 		return nil, err
 	}
 
-	return &profile, nil
+	return &templateList, nil
 }
 
 var TemplatePrinterSpecs = klo.Specs{

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/simonkienzler/crusado/pkg/config"
+	"github.com/simonkienzler/crusado/pkg/validator"
 
 	"github.com/spf13/cobra"
 )
@@ -26,14 +27,18 @@ func init() {
 func List(cmd *cobra.Command, args []string) {
 	cfg := config.GetConfig()
 
-	// create profile from example
-	profile, err := config.GetTemplateListFromFile(cfg.ProfileFilePath)
+	// create templateList from example
+	templateList, err := config.GetTemplateListFromFile(cfg.ProfileFilePath)
 	if err != nil {
 		log.Fatalf("Could not read example template file: %q", err)
-		return
 	}
 
-	err = GetAll(profile, outputFlag)
+	err = validator.ValidateTemplateList(templateList)
+	if err != nil {
+		log.Fatalf("Invalid profile: %s", err)
+	}
+
+	err = GetAll(templateList, outputFlag)
 	if err != nil {
 		log.Fatalf("Could not get templates: %q", err)
 	}
