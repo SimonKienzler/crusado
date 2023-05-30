@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/simonkienzler/crusado/pkg/config"
-	"github.com/simonkienzler/crusado/pkg/userstorytemplates"
+	"github.com/simonkienzler/crusado/pkg/templates"
 	"github.com/simonkienzler/crusado/pkg/validator"
 	"github.com/simonkienzler/crusado/pkg/workitems"
 
@@ -20,8 +20,8 @@ import (
 var (
 	ApplyCmd = &cobra.Command{
 		Use:   "apply [template-name]",
-		Short: "Apply a user story with tasks based on crusado templates",
-		Long: `Allows you to create a user story from the template specified by the argument
+		Short: "Apply a user story or bug with tasks based on crusado templates",
+		Long: `Allows you to create a user story or bug from the template specified by the argument
 given to the command. Able to execute in dry-run mode, if you don't actually
 want to create any workitems in Azure DevOps.`,
 		Args: cobra.ExactArgs(1),
@@ -57,10 +57,10 @@ func Apply(cmd *cobra.Command, args []string) {
 
 	err = validator.ValidateTemplateList(templateList)
 	if err != nil {
-		log.Fatalf("Invalid profile: %s", err)
+		prettyPrintValidationError(err)
 	}
 
-	ustService := &userstorytemplates.Service{
+	ustService := &templates.Service{
 		WorkitemsService: *workitemsService,
 		TemplateList:     *templateList,
 	}
@@ -111,32 +111,32 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 	return &workitemsService, nil
 }
 
-func ApplyFlow(ctx context.Context, service *userstorytemplates.Service, templateName string, dryRun bool) {
-	userStoryTemplate, err := service.GetUserStoryTemplateFromName(templateName)
+func ApplyFlow(ctx context.Context, service *templates.Service, templateName string, dryRun bool) {
+	template, err := service.GetTemplateFromName(templateName)
 	if err != nil {
-		log.Fatalf("Could not get user story template: %s", err)
+		log.Fatalf("Could not get template: %s", err)
 	}
 
-	storyDescriptionHTML, err := userstorytemplates.ConvertMarkdownToHTML(userStoryTemplate.StoryDescription)
+	storyDescriptionHTML, err := templates.ConvertMarkdownToHTML(template.Description)
 	if err != nil {
 		log.Fatalf("Could not convert story desription from Markdown to HTML: %s", err)
 	}
 
-	userStory, err := service.WorkitemsService.CreateUserStory(ctx, userStoryTemplate.StoryTitle, storyDescriptionHTML)
+	userStory, err := service.WorkitemsService.Create(ctx, template.Title, storyDescriptionHTML, template.Type)
 	if err != nil {
-		log.Fatalf("Could not create user story: %s", err)
+		log.Fatalf("Could not create from template '%s': %s", templateName, err)
 	}
 
-	coloredSuccessMessagePrinter(workitems.UserStoryType, userStoryTemplate.StoryTitle, dryRun)
+	coloredSuccessMessagePrinter(template.Type, template.Title, dryRun)
 
-	for i := range userStoryTemplate.Tasks {
-		task := userStoryTemplate.Tasks[i]
-		taskDescriptionHTML, err := userstorytemplates.ConvertMarkdownToHTML(userStoryTemplate.StoryDescription)
+	for i := range template.Tasks {
+		task := template.Tasks[i]
+		taskDescriptionHTML, err := templates.ConvertMarkdownToHTML(task.Description)
 		if err != nil {
 			log.Fatalf("Could not convert task desription from Markdown to HTML: %s", err)
 		}
 
-		_, err = service.WorkitemsService.CreateTaskUnderneathUserStory(ctx, task.Title, taskDescriptionHTML, userStory)
+		_, err = service.WorkitemsService.CreateTaskUnderneath(ctx, task.Title, taskDescriptionHTML, userStory)
 		if err != nil {
 			log.Fatalf("Could not create task: %s", err)
 		}
@@ -145,7 +145,7 @@ func ApplyFlow(ctx context.Context, service *userstorytemplates.Service, templat
 	}
 }
 
-func coloredSuccessMessagePrinter(itemType, title string, dryRun bool) {
+func coloredSuccessMessagePrinter(templateType config.TemplateType, title string, dryRun bool) {
 	const (
 		storyIcon = "📖"
 		bugIcon   = "🐛"
@@ -159,12 +159,18 @@ func coloredSuccessMessagePrinter(itemType, title string, dryRun bool) {
 	}
 
 	icon := ""
+	itemType := ""
 	txtColor := color.FgCyan
 
-	switch itemType {
-	case workitems.UserStoryType:
+	switch templateType {
+	case config.TemplateTypeUserStory:
 		icon = storyIcon
 		txtColor = color.FgGreen
+		itemType = workitems.UserStoryType
+	case config.TemplateTypeBug:
+		icon = bugIcon
+		txtColor = color.FgRed
+		itemType = workitems.BugType
 	case workitems.TaskType:
 		icon = "   " + taskIcon
 	}

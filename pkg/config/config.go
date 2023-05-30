@@ -82,7 +82,7 @@ type ProjectConfig struct {
 }
 
 type TemplateList struct {
-	Templates []UserStoryTemplate `yaml:"templates" json:"templates"`
+	Templates []Template `yaml:"templates" json:"templates"`
 }
 
 type Profile struct {
@@ -102,12 +102,37 @@ var ProfilePrinterSpecs = klo.Specs{
 	WideColumnSpec:    "NAME:{.Name},FILEPATH:{.FilePath},VALID:{.Valid},TEMPLATES:{.NumberOfTemplates}",
 }
 
-type UserStoryTemplate struct {
-	Name             string `yaml:"name" json:"name"`
-	Description      string `yaml:"description" json:"description"`
-	StoryTitle       string `yaml:"storyTitle" json:"storyTitle"`
-	StoryDescription string `yaml:"storyDescription" json:"storyDescription"`
-	Tasks            []Task `yaml:"tasks" json:"tasks"`
+type Template struct {
+	// Name is the unique name of the template, used in commands
+	Name string `yaml:"name" json:"name"`
+
+	// Summary provides a short synopsis for the template
+	Summary string `yaml:"summary" json:"summary"`
+
+	// Type identifies the template as one of [User Story, Bug]
+	Type TemplateType `yaml:"type" json:"type"`
+
+	// Title is the resulting title of the work item in Azure DevOps
+	Title string `yaml:"title" json:"title"`
+
+	// Description contains the resulting text in the body of the work item
+	Description string `yaml:"description" json:"description"`
+
+	// Tasks is a slice of individual tasks that are part of the template
+	Tasks []Task `yaml:"tasks" json:"tasks"`
+}
+
+type TemplateType string
+
+const (
+	TemplateTypeUserStory = TemplateType("UserStory")
+	TemplateTypeBug       = TemplateType("Bug")
+	TemplateTypeTask      = TemplateType("Task")
+)
+
+var AvailableTemplateTypes = []TemplateType{
+	TemplateTypeUserStory,
+	TemplateTypeBug,
 }
 
 type Task struct {
@@ -131,6 +156,6 @@ func GetTemplateListFromFile(filepath string) (*TemplateList, error) {
 }
 
 var TemplatePrinterSpecs = klo.Specs{
-	DefaultColumnSpec: "NAME:{.Name},DESCRIPTION:{.Description}",
-	WideColumnSpec:    "NAME:{.Name},DESCRIPTION:{.Description},STORY TITLE:{.StoryTitle},TASKS:{.Tasks[*].Title}",
+	DefaultColumnSpec: "NAME:{.Name},TYPE:{.Type},SUMMARY:{.Summary}",
+	WideColumnSpec:    "NAME:{.Name},TYPE:{.Type},SUMMARY:{.Summary},TITLE:{.Title},TASKS:{.Tasks[*].Title}",
 }

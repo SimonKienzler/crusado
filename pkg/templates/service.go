@@ -1,8 +1,7 @@
-package userstorytemplates
+package templates
 
 import (
 	"bytes"
-	"context"
 	"errors"
 
 	"github.com/simonkienzler/crusado/pkg/config"
@@ -12,30 +11,24 @@ import (
 )
 
 var (
-	errNoUserStoryTemplateFoundForName = errors.New("No user story template found for name")
+	errNoTemplateFoundForName = errors.New("No template found for name")
 )
 
-// Service deals with user story templates and
-// creates them using a workitems service.
+// Service deals with templates and creates them using a workitems service.
 type Service struct {
 	WorkitemsService workitems.Service
 	TemplateList     config.TemplateList
 }
 
-func (s *Service) CreateWorkitemsFromUserStoryTemplate(ctx context.Context, userStoryTemplateName string) error {
-
-	return nil
-}
-
-func (s *Service) GetUserStoryTemplateFromName(userStoryTemplateName string) (*config.UserStoryTemplate, error) {
+func (s *Service) GetTemplateFromName(templateName string) (*config.Template, error) {
 	for i := range s.TemplateList.Templates {
 		template := s.TemplateList.Templates[i]
-		if template.Name == userStoryTemplateName {
+		if template.Name == templateName {
 			return &template, nil
 		}
 	}
 
-	return nil, errNoUserStoryTemplateFoundForName
+	return nil, errNoTemplateFoundForName
 }
 
 func ConvertMarkdownToHTML(markdown string) (string, error) {

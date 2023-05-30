@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/simonkienzler/crusado/pkg/config"
-	"github.com/simonkienzler/crusado/pkg/userstorytemplates"
+	"github.com/simonkienzler/crusado/pkg/templates"
 	"github.com/simonkienzler/crusado/pkg/validator"
 
 	"github.com/spf13/cobra"
@@ -37,7 +37,7 @@ func Show(cmd *cobra.Command, args []string) {
 
 	err = validator.ValidateTemplateList(templateList)
 	if err != nil {
-		log.Fatalf("Invalid profile: %s", err)
+		prettyPrintValidationError(err)
 	}
 
 	err = GetByName(templateList, args[0], outputFlag)
@@ -48,18 +48,18 @@ func Show(cmd *cobra.Command, args []string) {
 }
 
 func GetByName(profile *config.TemplateList, name, outputFormat string) error {
-	ustService := userstorytemplates.Service{
+	ustService := templates.Service{
 		TemplateList: *profile,
 	}
 
-	userStoryTemplate, err := ustService.GetUserStoryTemplateFromName(name)
+	template, err := ustService.GetTemplateFromName(name)
 	if err != nil {
 		return err
 	}
 
 	// pretty-print single template view in default output format
 	if outputFormat == "" {
-		prettyPrintTemplate(userStoryTemplate)
+		prettyPrintTemplate(template)
 		return nil
 	}
 
@@ -67,5 +67,5 @@ func GetByName(profile *config.TemplateList, name, outputFormat string) error {
 	if err != nil {
 		return err
 	}
-	return printer.Fprint(os.Stdout, userStoryTemplate)
+	return printer.Fprint(os.Stdout, template)
 }

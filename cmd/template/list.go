@@ -14,7 +14,7 @@ var (
 	ListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List crusado templates",
-		Long:  `Allows you to list available user story templates. You can specify an output format.`,
+		Long:  `Allows you to list available user story and bug templates. You can specify an output format.`,
 		Args:  cobra.NoArgs,
 		Run:   List,
 	}
@@ -35,7 +35,7 @@ func List(cmd *cobra.Command, args []string) {
 
 	err = validator.ValidateTemplateList(templateList)
 	if err != nil {
-		log.Fatalf("Invalid profile: %s", err)
+		prettyPrintValidationError(err)
 	}
 
 	err = GetAll(templateList, outputFlag)

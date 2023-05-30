@@ -14,6 +14,7 @@ import (
 
 const (
 	UserStoryType = "User Story"
+	BugType       = "Bug"
 	TaskType      = "Task"
 )
 
@@ -21,7 +22,7 @@ const (
 var addOp = webapi.OperationValues.Add
 
 // Service deals with workitems and provides functions
-// for creating user stories or tasks.
+// for creating user stories, bugs or tasks.
 type Service struct {
 	WorkitemClient workitemtracking.Client
 	WorkClient     work.Client
@@ -47,11 +48,11 @@ func (s *Service) GetCurrentIteration(ctx context.Context) (*work.TeamSettingsIt
 	return &currentIteration, nil
 }
 
-func (s *Service) CreateUserStory(ctx context.Context, title, description string) (*workitemtracking.WorkItem, error) {
+func (s *Service) Create(ctx context.Context, title, description string, templateType config.TemplateType) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectConfig.Name
-	workItemType := UserStoryType
+	workItemType := getWorkItemTypeForTemplateType(templateType)
 	validateOnly := s.DryRun
-	document := s.buildBasicWorkItemJSONPatchDocument(title, description)
+	document := s.buildBasicWorkItemJSONPatchDocument(title, description, templateType)
 
 	return s.WorkitemClient.CreateWorkItem(ctx, workitemtracking.CreateWorkItemArgs{
 		Document:     &document,
@@ -61,14 +62,14 @@ func (s *Service) CreateUserStory(ctx context.Context, title, description string
 	})
 }
 
-func (s *Service) CreateTaskUnderneathUserStory(ctx context.Context, title, description string, parent *workitemtracking.WorkItem) (*workitemtracking.WorkItem, error) {
+func (s *Service) CreateTaskUnderneath(ctx context.Context, title, description string, parent *workitemtracking.WorkItem) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectConfig.Name
 	workItemType := TaskType
 	validateOnly := s.DryRun
-	document := s.buildBasicWorkItemJSONPatchDocument(title, description)
+	document := s.buildBasicWorkItemJSONPatchDocument(title, description, config.TemplateTypeTask)
 
 	if parent == nil {
-		return nil, errors.New("cannot create task underneath user story without parent")
+		return nil, errors.New("cannot create task underneath work item without parent")
 	}
 
 	// if we're in dry-run mode, don't specify the parent-child relationship,
@@ -91,10 +92,19 @@ func (s *Service) CreateTaskUnderneathUserStory(ctx context.Context, title, desc
 	})
 }
 
-func (s *Service) buildBasicWorkItemJSONPatchDocument(title, description string) []webapi.JsonPatchOperation {
+func (s *Service) buildBasicWorkItemJSONPatchDocument(title, description string, templateType config.TemplateType) []webapi.JsonPatchOperation {
+	fieldPathForDescription := ""
+	switch templateType {
+	// Bug doesn't use a description, but rather Repro Steps
+	case config.TemplateTypeBug:
+		fieldPathForDescription = "/fields/Microsoft.VSTS.TCM.ReproSteps"
+	// everything else so far supported uses Description
+	default:
+		fieldPathForDescription = "/fields/System.Description"
+	}
 	return []webapi.JsonPatchOperation{
 		buildJSONPatchOperation(addOp, "/fields/System.Title", title),
-		buildJSONPatchOperation(addOp, "/fields/System.Description", description),
+		buildJSONPatchOperation(addOp, fieldPathForDescription, description),
 		buildJSONPatchOperation(addOp, "/fields/System.AreaPath", s.ProjectConfig.AreaPath),
 		buildJSONPatchOperation(addOp, "/fields/System.IterationPath", s.ProjectConfig.IterationPath),
 	}
@@ -110,4 +120,15 @@ func buildJSONPatchOperation(op webapi.Operation, path string, value interface{}
 
 func stringPointer(s string) *string {
 	return &s
+}
+
+func getWorkItemTypeForTemplateType(templateType config.TemplateType) string {
+	switch templateType {
+	case config.TemplateTypeUserStory:
+		return UserStoryType
+	case config.TemplateTypeBug:
+		return BugType
+	default:
+		return ""
+	}
 }

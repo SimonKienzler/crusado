@@ -1,9 +1,10 @@
 name: example-profile
 templates:
   - name: example
-    description: This template demonstrates the capabilities of crusado.
-    storyTitle: Try out crusado
-    storyDescription: |
+    summary: This template demonstrates the capabilities of crusado.
+    type: UserStory
+    title: Try out crusado
+    description: |
       **Testing crusado...**
       
       * Todo 1
@@ -21,3 +22,22 @@ templates:
         description: step 2
       - title: Document test results
         description: step 3
+  - name: example-bug 
+    summary: This is a bug template.
+    type: Bug
+    title: Fix stuff
+    description: |
+      **Fixing crusado...**
+      
+      * Todo 1
+      * Todo 2
+      * Todo 3
+
+      [Link](https://example.com)
+
+      1. test
+      2. even more
+    tasks:
+      - title: Fix first component
+      - title: Fix second component
+      - title: Fix the rest
