@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/simonkienzler/crusado/pkg/templates"
@@ -30,12 +31,14 @@ want to create any workitems in Azure DevOps.`,
 )
 
 var (
-	dryRunFlag bool
+	dryRunFlag          bool
+	iterationOffsetFlag int
 )
 
 func init() {
 	// TODO change the default to false at some point, it's the more sensible default for actual usage
-	ApplyCmd.PersistentFlags().BoolVar(&dryRunFlag, "dry-run", true, "if set to true, crusado doesn't actually create work items in Azure DevOps")
+	ApplyCmd.PersistentFlags().BoolVarP(&dryRunFlag, "dry-run", "d", true, "if set to true, crusado doesn't actually create work items in Azure DevOps")
+	ApplyCmd.PersistentFlags().IntVarP(&iterationOffsetFlag, "iteration-offset", "i", 1, "iteration to apply the template in, relative to the current iteration.\n1 will traget the next iteration, -1 the previous one.")
 }
 
 func Apply(cmd *cobra.Command, args []string) {
@@ -96,17 +99,12 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 		},
 	}
 
-	// get current iteration, either from env var or from the API
-	workitemsService.ProjectConfig.IterationPath = crusadoConfig.IterationPath
-	if crusadoConfig.UseCurrentIteration {
-		currentIteration, err := workitemsService.GetCurrentIteration(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Printf("Got current iteration path: %+v", *currentIteration.Path)
-		workitemsService.ProjectConfig.IterationPath = *currentIteration.Path
+	iteration, err := workitemsService.GetIterationRelativeToCurrent(ctx, iterationOffsetFlag)
+	if err != nil {
+		return nil, err
 	}
+
+	workitemsService.ProjectConfig.IterationPath = *iteration.Path
 
 	return &workitemsService, nil
 }
@@ -127,6 +125,7 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 		log.Fatalf("Could not create from template '%s': %s", templateName, err)
 	}
 
+	coloredIterationPathPrinter(service.WorkitemsService.ProjectConfig.IterationPath)
 	coloredSuccessMessagePrinter(template.Type, template.Title, dryRun)
 
 	for i := range template.Tasks {
@@ -155,7 +154,7 @@ func coloredSuccessMessagePrinter(templateType config.TemplateType, title string
 	dryRunHint := ""
 
 	if dryRun {
-		dryRunHint = " (dry-run)"
+		dryRunHint = "(dry-run)"
 	}
 
 	icon := ""
@@ -173,9 +172,30 @@ func coloredSuccessMessagePrinter(templateType config.TemplateType, title string
 		itemType = workitems.BugType
 	case workitems.TaskType:
 		icon = "   " + taskIcon
+		itemType = workitems.TaskType
 	}
 
 	fmt.Print(icon + " " + itemType + " ")
-	color.New(txtColor).Printf(title)
-	fmt.Printf(" created successfully%s\n", dryRunHint)
+	color.New(txtColor).Print(title)
+	fmt.Printf(" created successfully %s\n", dryRunHint)
+}
+
+func coloredIterationPathPrinter(iterationPath string) {
+	const (
+		iterationIcon = "🔁"
+	)
+
+	parts := strings.Split(iterationPath, "\\")
+
+	fmt.Print(iterationIcon + " Iteration Path: ")
+
+	for i := range parts {
+		color.New(color.FgYellow).Print(parts[i])
+
+		if i < len(parts)-1 {
+			fmt.Print(" > ")
+		}
+	}
+
+	fmt.Print("\n")
 }

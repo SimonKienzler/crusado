@@ -13,17 +13,13 @@ const (
 	OrganizationUrlEnvVarKey     = "CRUSADO_AZURE_ORG_URL"
 	PersonalAccessTokenEnvVarKey = "CRUSADO_AZURE_PAT"
 	ProjectNameEnvVarKey         = "CRUSADO_AZURE_PROJECT_NAME"
-	IterationPathEnvVarKey       = "CRUSADO_ITERATION_PATH"
 	ProfileFilePathEnvVarKey     = "CRUSADO_PROFILE_FILE_PATH"
-	UseCurrentIterationEnvVarKey = "CRUSADO_USE_CURRENT_ITERATION"
 )
 
 type CrusadoConfig struct {
 	OrganizationUrl     string
 	PersonalAccessToken string
 	ProjectName         string
-	IterationPath       string
-	UseCurrentIteration bool
 	ProfileFilePath     string
 }
 
@@ -49,23 +45,11 @@ func GetConfig() CrusadoConfig {
 		incomplete = true
 		log.Printf("Required environment variable %s is not set", ProjectNameEnvVarKey)
 	}
-	if iterationPath, exists := os.LookupEnv(IterationPathEnvVarKey); exists {
-		cfg.IterationPath = iterationPath
-	} else {
-		incomplete = true
-		log.Printf("Required environment variable %s is not set", IterationPathEnvVarKey)
-	}
 	if profileFilePath, exists := os.LookupEnv(ProfileFilePathEnvVarKey); exists {
 		cfg.ProfileFilePath = profileFilePath
 	} else {
 		incomplete = true
 		log.Printf("Required environment variable %s is not set", ProfileFilePathEnvVarKey)
-	}
-	if useCurrentIteration, exists := os.LookupEnv(UseCurrentIterationEnvVarKey); exists {
-		cfg.UseCurrentIteration = useCurrentIteration == "true"
-	} else {
-		incomplete = true
-		log.Printf("Required environment variable %s is not set", UseCurrentIterationEnvVarKey)
 	}
 
 	if incomplete {

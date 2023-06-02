@@ -30,6 +30,8 @@ type Service struct {
 	ProjectConfig  config.ProjectConfig
 }
 
+// GetCurrentIteration returns a single Iteration object which represents the
+// iteration that is currently in progress in the configured project.
 func (s *Service) GetCurrentIteration(ctx context.Context) (*work.TeamSettingsIteration, error) {
 	iterations, err := s.WorkClient.GetTeamIterations(ctx, work.GetTeamIterationsArgs{
 		Project:   &s.ProjectConfig.Name,
@@ -48,6 +50,63 @@ func (s *Service) GetCurrentIteration(ctx context.Context) (*work.TeamSettingsIt
 	return &currentIteration, nil
 }
 
+// ListIterations returns a list of all iterations (past, current and future) in
+// the configured project.
+func (s *Service) ListIterations(ctx context.Context) (*[]work.TeamSettingsIteration, error) {
+	iterations, err := s.WorkClient.GetTeamIterations(ctx, work.GetTeamIterationsArgs{
+		Project: &s.ProjectConfig.Name,
+	})
+	if iterations == nil {
+		return nil, err
+	}
+
+	return iterations, nil
+}
+
+// GetIterationRelativeToCurrent takes an integer as offset and will return the
+// iteration relative to the current one, if the iteration at the specified
+// offset does exist. Will return an error if the offset is too far in the past
+// or too far in the future. Using 0 as offset will return the current
+// iteration, using 1 will return the next iteration. Use -1 to get the previous
+// iteration and so on.
+func (s *Service) GetIterationRelativeToCurrent(ctx context.Context, offset int) (*work.TeamSettingsIteration, error) {
+	current, err := s.GetCurrentIteration(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	all, err := s.ListIterations(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if current == nil || all == nil {
+		return nil, fmt.Errorf("Could not properly get the current or all iterations")
+	}
+
+	currentIndex := 0
+
+	for i := range *all {
+		if *(*all)[i].Id == *current.Id {
+			currentIndex = i
+			break
+		}
+	}
+
+	relativePos := currentIndex + offset
+
+	if len(*all) <= relativePos {
+		return nil, fmt.Errorf("offset %d points to a non-existent iteration in the future", offset)
+	}
+
+	if relativePos < 0 {
+		return nil, fmt.Errorf("offset %d points to a non-existent iteration in the past", offset)
+	}
+
+	return &(*all)[relativePos], nil
+}
+
+// Create is responsible for creating arbitrary workitems of the specified type.
 func (s *Service) Create(ctx context.Context, title, description string, templateType config.TemplateType) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectConfig.Name
 	workItemType := getWorkItemTypeForTemplateType(templateType)
