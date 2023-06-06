@@ -1,9 +1,11 @@
 package template
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/simonkienzler/crusado/pkg/config"
@@ -33,11 +35,12 @@ want to create any workitems in Azure DevOps.`,
 var (
 	dryRunFlag          bool
 	iterationOffsetFlag int
+	autoApproveFlag     bool
 )
 
 func init() {
-	// TODO change the default to false at some point, it's the more sensible default for actual usage
-	ApplyCmd.PersistentFlags().BoolVarP(&dryRunFlag, "dry-run", "d", true, "if set to true, crusado doesn't actually create work items in Azure DevOps")
+	ApplyCmd.PersistentFlags().BoolVarP(&dryRunFlag, "dry-run", "d", false, "if set to true, crusado doesn't actually create work items in Azure DevOps")
+	ApplyCmd.PersistentFlags().BoolVarP(&autoApproveFlag, "yes", "y", false, "skip confirmation step")
 	ApplyCmd.PersistentFlags().IntVarP(&iterationOffsetFlag, "iteration-offset", "i", 1, "iteration to apply the template in, relative to the current iteration.\n1 will traget the next iteration, -1 the previous one.")
 }
 
@@ -68,7 +71,7 @@ func Apply(cmd *cobra.Command, args []string) {
 		TemplateList:     *templateList,
 	}
 
-	ApplyFlow(ctx, ustService, args[0], dryRunFlag)
+	ApplyFlow(ctx, ustService, args[0], dryRunFlag, autoApproveFlag)
 }
 
 func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems.Service, error) {
@@ -109,7 +112,15 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 	return &workitemsService, nil
 }
 
-func ApplyFlow(ctx context.Context, service *templates.Service, templateName string, dryRun bool) {
+func ApplyFlow(ctx context.Context, service *templates.Service, templateName string, dryRun, autoApprove bool) {
+	var createdItemHint string
+
+	if dryRun {
+		createdItemHint = "would be created"
+	} else {
+		createdItemHint = "created successfully"
+	}
+
 	template, err := service.GetTemplateFromName(templateName)
 	if err != nil {
 		log.Fatalf("Could not get template: %s", err)
@@ -120,13 +131,30 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 		log.Fatalf("Could not convert story desription from Markdown to HTML: %s", err)
 	}
 
+	coloredIterationPathPrinter(service.WorkitemsService.ProjectConfig.IterationPath)
+
+	if !autoApprove {
+		coloredItemPrinter(template.Type, template.Title, "")
+
+		for i := range template.Tasks {
+			task := template.Tasks[i]
+			coloredItemPrinter(workitems.TaskType, task.Title, "")
+		}
+
+		if !confirm("Create these work items in the specified iteration path?") {
+			fmt.Printf("No work items created.\n")
+			return
+		}
+
+		fmt.Println()
+	}
+
 	userStory, err := service.WorkitemsService.Create(ctx, template.Title, storyDescriptionHTML, template.Type)
 	if err != nil {
 		log.Fatalf("Could not create from template '%s': %s", templateName, err)
 	}
 
-	coloredIterationPathPrinter(service.WorkitemsService.ProjectConfig.IterationPath)
-	coloredSuccessMessagePrinter(template.Type, template.Title, dryRun)
+	coloredItemPrinter(template.Type, template.Title, createdItemHint)
 
 	for i := range template.Tasks {
 		task := template.Tasks[i]
@@ -140,22 +168,16 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 			log.Fatalf("Could not create task: %s", err)
 		}
 
-		coloredSuccessMessagePrinter(workitems.TaskType, task.Title, dryRun)
+		coloredItemPrinter(workitems.TaskType, task.Title, createdItemHint)
 	}
 }
 
-func coloredSuccessMessagePrinter(templateType config.TemplateType, title string, dryRun bool) {
+func coloredItemPrinter(templateType config.TemplateType, title, addendum string) {
 	const (
 		storyIcon = "📖"
 		bugIcon   = "🐛"
 		taskIcon  = "📋"
 	)
-
-	dryRunHint := ""
-
-	if dryRun {
-		dryRunHint = "(dry-run)"
-	}
 
 	icon := ""
 	itemType := ""
@@ -177,7 +199,7 @@ func coloredSuccessMessagePrinter(templateType config.TemplateType, title string
 
 	fmt.Print(icon + " " + itemType + " ")
 	color.New(txtColor).Print(title)
-	fmt.Printf(" created successfully %s\n", dryRunHint)
+	fmt.Printf(" %s\n", addendum)
 }
 
 func coloredIterationPathPrinter(iterationPath string) {
@@ -197,5 +219,26 @@ func coloredIterationPathPrinter(iterationPath string) {
 		}
 	}
 
-	fmt.Print("\n")
+	fmt.Print("\n\n")
+}
+
+func confirm(prompt string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Printf("\n%s [y/n]: ", prompt)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		}
+	}
 }
