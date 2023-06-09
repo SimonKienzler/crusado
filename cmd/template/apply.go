@@ -25,8 +25,8 @@ var (
 		Use:   "apply [template-name]",
 		Short: "Apply a user story or bug with tasks based on crusado templates",
 		Long: `Allows you to create a user story or bug from the template specified by the argument
-given to the command. Able to execute in dry-run mode, if you don't actually
-want to create any workitems in Azure DevOps.`,
+given to the command. Supports dry-run, skipping confirmation and let's you specify
+the exact iteration in which to apply the template.`,
 		Args: cobra.ExactArgs(1),
 		Run:  Apply,
 	}

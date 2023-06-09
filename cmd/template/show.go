@@ -14,7 +14,7 @@ import (
 var (
 	ShowCmd = &cobra.Command{
 		Use:   "show [template-name]",
-		Short: "Show specific crusado template",
+		Short: "Show a specific crusado template",
 		Long: `Get a detailed look at a specific template, listing all relevant fields
 and tasks that belong to the template. You can specify an output format.`,
 		Args: cobra.ExactArgs(1),
