@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/simonkienzler/crusado/cmd/profile"
 	"github.com/simonkienzler/crusado/cmd/template"
 
 	"github.com/spf13/cobra"
@@ -20,7 +19,8 @@ your current iteration. You can even use Markdown syntax in your descriptions.`,
 
 func init() {
 	crusadoCmd.AddCommand(template.RootCmd)
-	crusadoCmd.AddCommand(profile.RootCmd)
+	// TODO implement proper multi-profile handling
+	//crusadoCmd.AddCommand(profile.RootCmd)
 }
 
 func Execute() error {
