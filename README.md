@@ -35,16 +35,22 @@ Let's take care of these things one by one.
 
 ### 1 Install `crusado` CLI
 
-> TODO: use https://goreleaser.com/ to provide precompiled binaries
-
-Clone the repository and run the following command:
+Head to the [latest release](https://github.com/SimonKienzler/crusado/releases)
+and download the version suitable for your system. Be sure to put the binary at
+a file location that is in your `$PATH`. Verify the installation was successful
+by running:
 
 ```sh
-go build -o crusado main.go
+crusado version
 ```
 
-Then invoke the CLI using `./crusado` or move it somwhere in your `$PATH` and
-invoke it with `crusado`.
+Alternatively, you can build from source after cloning the repository:
+
+```sh
+make build
+```
+
+Then invoke the CLI using `./bin/crusado`.
 
 ### 2 Create Azure PAT
 
