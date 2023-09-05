@@ -26,7 +26,7 @@ func init() {
 	ShowCmd.PersistentFlags().StringVarP(&outputFlag, "output", "o", "", "define the output format: [wide, yaml, json, jsonpath]")
 }
 
-func Show(cmd *cobra.Command, args []string) {
+func Show(_ *cobra.Command, args []string) {
 	cfg := config.GetConfig()
 
 	// create templateList from example
@@ -45,7 +45,6 @@ func Show(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("Could not get template by name '%s': %q", args[0], err)
 	}
-	return
 }
 
 func GetByName(profile *config.TemplateList, name, outputFormat string) error {

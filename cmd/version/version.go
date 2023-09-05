@@ -17,6 +17,6 @@ var (
 
 var CrusadoVersion = "v0.0.0"
 
-func Version(cmd *cobra.Command, args []string) {
+func Version(_ *cobra.Command, _ []string) {
 	fmt.Println(CrusadoVersion)
 }

@@ -39,12 +39,32 @@ var (
 )
 
 func init() {
-	ApplyCmd.PersistentFlags().BoolVarP(&dryRunFlag, "dry-run", "d", false, "if set to true, crusado doesn't actually create work items in Azure DevOps")
-	ApplyCmd.PersistentFlags().BoolVarP(&autoApproveFlag, "yes", "y", false, "skip confirmation step")
-	ApplyCmd.PersistentFlags().IntVarP(&iterationOffsetFlag, "iteration-offset", "i", 1, "iteration to apply the template in, relative to the current iteration.\n1 will traget the next iteration, -1 the previous one.")
+	ApplyCmd.PersistentFlags().BoolVarP(
+		&dryRunFlag,
+		"dry-run",
+		"d",
+		false,
+		"if set to true, crusado doesn't actually create work items in Azure DevOps",
+	)
+
+	ApplyCmd.PersistentFlags().BoolVarP(
+		&autoApproveFlag,
+		"yes",
+		"y",
+		false,
+		"skip confirmation step",
+	)
+
+	ApplyCmd.PersistentFlags().IntVarP(
+		&iterationOffsetFlag,
+		"iteration-offset",
+		"i",
+		1,
+		"iteration to apply the template in, relative to the current iteration.\n1 will traget the next iteration, -1 the previous one.",
+	)
 }
 
-func Apply(cmd *cobra.Command, args []string) {
+func Apply(_ *cobra.Command, args []string) {
 	// TODO implement proper contexts
 	ctx := context.Background()
 
@@ -78,7 +98,7 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 	crusadoConfig := config.GetConfig()
 
 	// create a connection to the organization
-	connection := azuredevops.NewPatConnection(crusadoConfig.OrganizationUrl, crusadoConfig.PersonalAccessToken)
+	connection := azuredevops.NewPatConnection(crusadoConfig.OrganizationURL, crusadoConfig.PersonalAccessToken)
 
 	// create clients required by the workitems service
 	workitemClient, err := workitemtracking.NewClient(ctx, connection)

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -10,14 +9,14 @@ import (
 )
 
 const (
-	OrganizationUrlEnvVarKey     = "CRUSADO_AZURE_ORG_URL"
-	PersonalAccessTokenEnvVarKey = "CRUSADO_AZURE_PAT"
-	ProjectNameEnvVarKey         = "CRUSADO_AZURE_PROJECT_NAME"
-	ProfileFilePathEnvVarKey     = "CRUSADO_PROFILE_FILE_PATH"
+	OrganizationURLEnvVarKey = "CRUSADO_AZURE_ORG_URL"
+	AzurePATEnvVarKey        = "CRUSADO_AZURE_PAT"
+	ProjectNameEnvVarKey     = "CRUSADO_AZURE_PROJECT_NAME"
+	ProfileFilePathEnvVarKey = "CRUSADO_PROFILE_FILE_PATH"
 )
 
 type CrusadoConfig struct {
-	OrganizationUrl     string
+	OrganizationURL     string
 	PersonalAccessToken string
 	ProjectName         string
 	ProfileFilePath     string
@@ -27,17 +26,17 @@ func GetConfig() CrusadoConfig {
 	cfg := CrusadoConfig{}
 	incomplete := false
 
-	if organizationUrl, exists := os.LookupEnv(OrganizationUrlEnvVarKey); exists {
-		cfg.OrganizationUrl = organizationUrl
+	if organizationURL, exists := os.LookupEnv(OrganizationURLEnvVarKey); exists {
+		cfg.OrganizationURL = organizationURL
 	} else {
 		incomplete = true
-		log.Printf("Required environment variable %s is not set", OrganizationUrlEnvVarKey)
+		log.Printf("Required environment variable %s is not set", OrganizationURLEnvVarKey)
 	}
-	if personalAccessToken, exists := os.LookupEnv(PersonalAccessTokenEnvVarKey); exists {
+	if personalAccessToken, exists := os.LookupEnv(AzurePATEnvVarKey); exists {
 		cfg.PersonalAccessToken = personalAccessToken
 	} else {
 		incomplete = true
-		log.Printf("Required environment variable %s is not set", PersonalAccessTokenEnvVarKey)
+		log.Printf("Required environment variable %s is not set", AzurePATEnvVarKey)
 	}
 	if projectName, exists := os.LookupEnv(ProjectNameEnvVarKey); exists {
 		cfg.ProjectName = projectName
@@ -125,7 +124,7 @@ type Task struct {
 }
 
 func GetTemplateListFromFile(filepath string) (*TemplateList, error) {
-	exampleProfile, err := ioutil.ReadFile(filepath)
+	exampleProfile, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, err
 	}

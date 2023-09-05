@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	errNoTemplateFoundForName = errors.New("No template found for name")
+	errNoTemplateFoundForName = errors.New("no template found for name")
 )
 
 // Service deals with templates and creates them using a workitems service.

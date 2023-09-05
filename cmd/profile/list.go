@@ -23,8 +23,8 @@ func init() {
 	ListCmd.PersistentFlags().StringVarP(&outputFlag, "output", "o", "", "define the output format: [wide, yaml, json, jsonpath]")
 }
 
-func List(cmd *cobra.Command, args []string) {
-	// TODO read the list of availble profiles from a well-known source, e.g. $HOME/.crusado/profiles.yaml
+func List(_ *cobra.Command, _ []string) {
+	// TODO read the list of available profiles from a well-known source, e.g. $HOME/.crusado/profiles.yaml
 	// currently we only support one profile
 	cfg := config.GetConfig()
 

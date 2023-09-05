@@ -17,7 +17,7 @@ var (
 	}
 )
 
-func SetDefault(cmd *cobra.Command, args []string) {
+func SetDefault(_ *cobra.Command, _ []string) {
 	_ = config.GetConfig()
 	// TODO write the given profile name as the default value in the well-known
 	// crusado config file, if it is a valid profile with a retrievable file path

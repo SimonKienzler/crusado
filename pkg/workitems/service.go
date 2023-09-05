@@ -18,6 +18,14 @@ const (
 	TaskType      = "Task"
 )
 
+var (
+	ErrCurrentIterationUnidentifiable = errors.New("search for current iteration returned unexpected number of results")
+	ErrCouldNotGetIterations          = errors.New("could not properly get the current or all iterations")
+	ErrOffsetTooFarInFuture           = errors.New("offset points to a non-existent iteration in the future")
+	ErrOffsetTooFarInPast             = errors.New("offset points to a non-existent iteration in the past")
+	ErrTaskWithoutParent              = errors.New("cannot create task underneath work item without parent")
+)
+
 // addOp is a shortcut variable for the Add operation.
 var addOp = webapi.OperationValues.Add
 
@@ -42,7 +50,7 @@ func (s *Service) GetCurrentIteration(ctx context.Context) (*work.TeamSettingsIt
 	}
 
 	if len(*iterations) != 1 {
-		return nil, fmt.Errorf("Search for current iteration returned %d results", len(*iterations))
+		return nil, fmt.Errorf("%w: %d iterations found", ErrCurrentIterationUnidentifiable, len(*iterations))
 	}
 
 	currentIteration := (*iterations)[0]
@@ -81,7 +89,7 @@ func (s *Service) GetIterationRelativeToCurrent(ctx context.Context, offset int)
 	}
 
 	if current == nil || all == nil {
-		return nil, fmt.Errorf("Could not properly get the current or all iterations")
+		return nil, ErrCouldNotGetIterations
 	}
 
 	currentIndex := 0
@@ -96,11 +104,11 @@ func (s *Service) GetIterationRelativeToCurrent(ctx context.Context, offset int)
 	relativePos := currentIndex + offset
 
 	if len(*all) <= relativePos {
-		return nil, fmt.Errorf("offset %d points to a non-existent iteration in the future", offset)
+		return nil, fmt.Errorf("%w: %d", ErrOffsetTooFarInFuture, offset)
 	}
 
 	if relativePos < 0 {
-		return nil, fmt.Errorf("offset %d points to a non-existent iteration in the past", offset)
+		return nil, fmt.Errorf("%w: %d", ErrOffsetTooFarInPast, offset)
 	}
 
 	return &(*all)[relativePos], nil
@@ -128,7 +136,7 @@ func (s *Service) CreateTaskUnderneath(ctx context.Context, title, description s
 	document := s.buildBasicWorkItemJSONPatchDocument(title, description, config.TemplateTypeTask)
 
 	if parent == nil {
-		return nil, errors.New("cannot create task underneath work item without parent")
+		return nil, ErrTaskWithoutParent
 	}
 
 	// if we're in dry-run mode, don't specify the parent-child relationship,
@@ -157,7 +165,10 @@ func (s *Service) buildBasicWorkItemJSONPatchDocument(title, description string,
 	// Bug doesn't use a description, but rather Repro Steps
 	case config.TemplateTypeBug:
 		fieldPathForDescription = "/fields/Microsoft.VSTS.TCM.ReproSteps"
-	// everything else so far supported uses Description
+	case config.TemplateTypeUserStory:
+		fieldPathForDescription = "/fields/System.Description"
+	case config.TemplateTypeTask:
+		fieldPathForDescription = "/fields/System.Description"
 	default:
 		fieldPathForDescription = "/fields/System.Description"
 	}
@@ -187,6 +198,8 @@ func getWorkItemTypeForTemplateType(templateType config.TemplateType) string {
 		return UserStoryType
 	case config.TemplateTypeBug:
 		return BugType
+	case config.TemplateTypeTask:
+		return TaskType
 	default:
 		return ""
 	}

@@ -24,7 +24,7 @@ func init() {
 	ListCmd.PersistentFlags().StringVarP(&outputFlag, "output", "o", "", "define the output format: [wide, yaml, json, jsonpath]")
 }
 
-func List(cmd *cobra.Command, args []string) {
+func List(_ *cobra.Command, _ []string) {
 	cfg := config.GetConfig()
 
 	// create templateList from example

@@ -22,7 +22,7 @@ func init() {
 	crusadoCmd.AddCommand(version.RootCmd)
 	crusadoCmd.AddCommand(template.RootCmd)
 	// TODO implement proper multi-profile handling
-	//crusadoCmd.AddCommand(profile.RootCmd)
+	// crusadoCmd.AddCommand(profile.RootCmd)
 }
 
 func Execute() error {

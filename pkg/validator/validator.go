@@ -44,7 +44,7 @@ func ValidateProfileConfig(profile *config.ProfileConfig) []error {
 // as each indiviual template within the list. It returns an error that is
 // constructed using errors.Join().
 func ValidateTemplateList(templateList *config.TemplateList) error {
-	var errs []error
+	errs := []error{}
 
 	errs = append(errs, ValidateTemplateListUniqueName(templateList))
 
@@ -57,7 +57,7 @@ func ValidateTemplateList(templateList *config.TemplateList) error {
 
 func ValidateTemplateListUniqueName(templateList *config.TemplateList) error {
 	templateNames := map[string]bool{}
-	var errs []error
+	errs := []error{}
 
 	for i := range templateList.Templates {
 		name := templateList.Templates[i].Name
