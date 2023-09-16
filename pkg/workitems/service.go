@@ -24,6 +24,7 @@ var (
 	ErrOffsetTooFarInFuture           = errors.New("offset points to a non-existent iteration in the future")
 	ErrOffsetTooFarInPast             = errors.New("offset points to a non-existent iteration in the past")
 	ErrTaskWithoutParent              = errors.New("cannot create task underneath work item without parent")
+	ErrCouldNotAssertLinks            = errors.New("could not assert the expected type from the workItems' Links field")
 )
 
 // addOp is a shortcut variable for the Add operation.
@@ -157,6 +158,34 @@ func (s *Service) CreateTaskUnderneath(ctx context.Context, title, description s
 		Type:         &workItemType,
 		ValidateOnly: &validateOnly,
 	})
+}
+
+// GetWorkItemHTMLRef returns the URL pointing to the Azure DevOps link that
+// shows the HTML view of the passed work item. That's the URL the user would
+// want to visit in a browser. Returns an error if the necessary type assertion
+// on the Links field fails or the expected map key isn't present. Returns nil
+// in dry-run mode.
+func (s *Service) GetWorkItemHTMLRef(workItem *workitemtracking.WorkItem) (*string, error) {
+	if s.DryRun {
+		return nil, nil
+	}
+
+	links, ok := workItem.Links.(map[string]interface{})
+	if !ok {
+		return nil, ErrCouldNotAssertLinks
+	}
+
+	html, ok := links["html"].(map[string]interface{})
+	if !ok {
+		return nil, ErrCouldNotAssertLinks
+	}
+
+	href, ok := html["href"].(string)
+	if !ok {
+		return nil, ErrCouldNotAssertLinks
+	}
+
+	return &href, nil
 }
 
 func (s *Service) buildBasicWorkItemJSONPatchDocument(title, description string, templateType config.TemplateType) []webapi.JsonPatchOperation {

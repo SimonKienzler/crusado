@@ -174,7 +174,14 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 		log.Fatalf("Could not create from template '%s': %s", templateName, err)
 	}
 
-	coloredItemPrinter(template.Type, template.Title, createdItemHint)
+	createdItemHintWithURL := createdItemHint
+
+	url, err := service.WorkitemsService.GetWorkItemHTMLRef(userStory)
+	if err == nil && url != nil {
+		createdItemHintWithURL += fmt.Sprintf(" at %s", *url)
+	}
+
+	coloredItemPrinter(template.Type, template.Title, createdItemHintWithURL)
 
 	for i := range template.Tasks {
 		task := template.Tasks[i]
