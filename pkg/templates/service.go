@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/simonkienzler/crusado/pkg/config"
-	"github.com/simonkienzler/crusado/pkg/workitems"
-
 	"github.com/yuin/goldmark"
 )
 
@@ -14,19 +11,18 @@ var (
 	errNoTemplateFoundForName = errors.New("no template found for name")
 )
 
-// Service deals with templates and creates them using a workitems service.
 type Service struct {
-	WorkitemsService workitems.Service
-	TemplateList     config.TemplateList
+	TemplatesDirectory string
 }
 
-func (s *Service) GetTemplateFromName(templateName string) (*config.Template, error) {
-	for i := range s.TemplateList.Templates {
-		template := s.TemplateList.Templates[i]
-		if template.Name == templateName {
-			return &template, nil
-		}
-	}
+func (s *Service) GetAll() ([]Template, error) {
+	// TODO implement
+
+	return nil, errNoTemplateFoundForName
+}
+
+func (s *Service) GetByName(name string) (*Template, error) {
+	// TODO implement
 
 	return nil, errNoTemplateFoundForName
 }

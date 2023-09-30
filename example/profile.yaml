@@ -1,4 +1,3 @@
-name: example-profile
 templates:
   - name: example
     summary: This template demonstrates the capabilities of crusado.

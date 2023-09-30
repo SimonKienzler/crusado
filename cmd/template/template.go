@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/simonkienzler/crusado/pkg/config"
+	"github.com/simonkienzler/crusado/pkg/templates"
 	"github.com/spf13/cobra"
 	"github.com/thediveo/klo"
 )
@@ -30,11 +31,19 @@ func init() {
 	RootCmd.AddCommand(ApplyCmd)
 }
 
-func getPrinter(outputFormat string) (klo.ValuePrinter, error) {
-	return klo.PrinterFromFlag(outputFormat, &config.TemplatePrinterSpecs)
+func templateService() *templates.Service {
+	cfg := config.GetConfigOrDie()
+
+	return &templates.Service{
+		TemplatesDirectory: cfg.TemplatesDirectory,
+	}
 }
 
-func prettyPrintTemplate(template *config.Template) {
+func getPrinter(outputFormat string) (klo.ValuePrinter, error) {
+	return klo.PrinterFromFlag(outputFormat, &templates.PrinterSpecs)
+}
+
+func prettyPrintTemplate(template *templates.Template) {
 	// TODO add color
 	fmt.Printf("Name:             %s\n", template.Name)
 	fmt.Printf("Type:             %s\n", template.Type)

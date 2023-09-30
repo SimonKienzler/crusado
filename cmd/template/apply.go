@@ -10,7 +10,6 @@ import (
 
 	"github.com/simonkienzler/crusado/pkg/config"
 	"github.com/simonkienzler/crusado/pkg/templates"
-	"github.com/simonkienzler/crusado/pkg/validator"
 	"github.com/simonkienzler/crusado/pkg/workitems"
 
 	"github.com/fatih/color"
@@ -68,39 +67,20 @@ func Apply(_ *cobra.Command, args []string) {
 	// TODO implement proper contexts
 	ctx := context.Background()
 
-	cfg := config.GetConfig()
-
-	workitemsService, err := createWorkitemsService(ctx, dryRunFlag)
+	wiService, err := createWorkitemsService(ctx, dryRunFlag)
 	if err != nil {
 		log.Fatalf("Error during service creation: %s", err)
 	}
 
-	// create templateList from example
-	templateList, err := config.GetTemplateListFromFile(cfg.ProfileFilePath)
-	if err != nil {
-		log.Fatalf("Could not read example template file: %s", err)
-	}
-
-	err = validator.ValidateTemplateList(templateList)
-	if err != nil {
-		prettyPrintValidationError(err)
-	}
-
-	ustService := &templates.Service{
-		WorkitemsService: *workitemsService,
-		TemplateList:     *templateList,
-	}
-
-	ApplyFlow(ctx, ustService, args[0], dryRunFlag, autoApproveFlag)
+	ApplyFlow(ctx, templateService(), wiService, args[0])
 }
 
 func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems.Service, error) {
-	crusadoConfig := config.GetConfig()
+	cfg := config.GetConfigOrDie()
 
 	// create a connection to the organization
-	connection := azuredevops.NewPatConnection(crusadoConfig.OrganizationURL, crusadoConfig.PersonalAccessToken)
+	connection := azuredevops.NewPatConnection(cfg.OrganizationURL, cfg.PersonalAccessToken)
 
-	// create clients required by the workitems service
 	workitemClient, err := workitemtracking.NewClient(ctx, connection)
 	if err != nil {
 		return nil, err
@@ -111,37 +91,34 @@ func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems
 		return nil, err
 	}
 
-	// configure the workitems service
-	workitemsService := workitems.Service{
-		WorkitemClient: workitemClient,
-		WorkClient:     workClient,
-		DryRun:         useDryRunMode,
-		ProjectConfig: config.ProjectConfig{
-			Name:     crusadoConfig.ProjectName,
-			AreaPath: crusadoConfig.ProjectName,
-		},
-	}
-
-	iteration, err := workitemsService.GetIterationRelativeToCurrent(ctx, iterationOffsetFlag)
+	iterationPath, err := workitems.GetIterationPathFromOffset(ctx, workClient, cfg.ProjectName, iterationOffsetFlag)
 	if err != nil {
 		return nil, err
 	}
 
-	workitemsService.ProjectConfig.IterationPath = *iteration.Path
+	// configure the workitems service
+	workitemsService := workitems.Service{
+		WorkitemClient: workitemClient,
+		DryRun:         useDryRunMode,
+
+		ProjectName:   cfg.ProjectName,
+		AreaPath:      cfg.ProjectName,
+		IterationPath: iterationPath,
+	}
 
 	return &workitemsService, nil
 }
 
-func ApplyFlow(ctx context.Context, service *templates.Service, templateName string, dryRun, autoApprove bool) {
+func ApplyFlow(ctx context.Context, tplService *templates.Service, wiService *workitems.Service, templateName string) {
 	var createdItemHint string
 
-	if dryRun {
+	if dryRunFlag {
 		createdItemHint = "would be created"
 	} else {
 		createdItemHint = "created successfully"
 	}
 
-	template, err := service.GetTemplateFromName(templateName)
+	template, err := tplService.GetByName(templateName)
 	if err != nil {
 		log.Fatalf("Could not get template: %s", err)
 	}
@@ -151,9 +128,9 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 		log.Fatalf("Could not convert story desription from Markdown to HTML: %s", err)
 	}
 
-	coloredIterationPathPrinter(service.WorkitemsService.ProjectConfig.IterationPath)
+	coloredIterationPathPrinter(wiService.IterationPath)
 
-	if !autoApprove {
+	if !autoApproveFlag {
 		coloredItemPrinter(template.Type, template.Title, "")
 
 		for i := range template.Tasks {
@@ -169,14 +146,14 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 		fmt.Println()
 	}
 
-	userStory, err := service.WorkitemsService.Create(ctx, template.Title, storyDescriptionHTML, template.Type)
+	userStory, err := wiService.Create(ctx, template.Title, storyDescriptionHTML, template.Type)
 	if err != nil {
 		log.Fatalf("Could not create from template '%s': %s", templateName, err)
 	}
 
 	createdItemHintWithURL := createdItemHint
 
-	url, err := service.WorkitemsService.GetWorkItemHTMLRef(userStory)
+	url, err := wiService.GetWorkItemHTMLRef(userStory)
 	if err == nil && url != nil {
 		createdItemHintWithURL += fmt.Sprintf(" at %s", *url)
 	}
@@ -190,7 +167,7 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 			log.Fatalf("Could not convert task desription from Markdown to HTML: %s", err)
 		}
 
-		_, err = service.WorkitemsService.CreateTaskUnderneath(ctx, task.Title, taskDescriptionHTML, userStory)
+		_, err = wiService.CreateTaskUnderneath(ctx, task.Title, taskDescriptionHTML, userStory)
 		if err != nil {
 			log.Fatalf("Could not create task: %s", err)
 		}
@@ -199,7 +176,7 @@ func ApplyFlow(ctx context.Context, service *templates.Service, templateName str
 	}
 }
 
-func coloredItemPrinter(templateType config.TemplateType, title, addendum string) {
+func coloredItemPrinter(templateType templates.Type, title, addendum string) {
 	const (
 		storyIcon = "📖"
 		bugIcon   = "🐛"
@@ -211,11 +188,11 @@ func coloredItemPrinter(templateType config.TemplateType, title, addendum string
 	txtColor := color.FgCyan
 
 	switch templateType {
-	case config.TemplateTypeUserStory:
+	case templates.UserStoryType:
 		icon = storyIcon
 		txtColor = color.FgGreen
 		itemType = workitems.UserStoryType
-	case config.TemplateTypeBug:
+	case templates.BugType:
 		icon = bugIcon
 		txtColor = color.FgRed
 		itemType = workitems.BugType

@@ -98,7 +98,6 @@ can use this file to manage your User Story and Bug templates.
 Take a look at this minimal example:
 
 ```yaml
-name: example-profile
 templates:
   - name: example-story
     summary: This is a user story template.
