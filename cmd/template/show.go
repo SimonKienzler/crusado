@@ -30,7 +30,7 @@ func Show(_ *cobra.Command, args []string) {
 }
 
 func GetByName(name, outputFormat string) error {
-	template, err := templateService().GetByName(name)
+	template, err := crusadoService().GetByName(name)
 	if err != nil {
 		return err
 	}

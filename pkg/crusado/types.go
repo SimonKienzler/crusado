@@ -1,12 +1,14 @@
-package templates
+package crusado
 
 import "github.com/thediveo/klo"
 
-type TemplateList struct {
-	Templates []Template `yaml:"templates" json:"templates"`
+type Template struct {
+	Meta        Meta
+	Description string
 }
 
-type Template struct {
+// Meta represents the Metadata associated with a Crusado template
+type Meta struct {
 	// Name is the unique name of the template, used in commands
 	Name string `yaml:"name" json:"name"`
 
@@ -18,9 +20,6 @@ type Template struct {
 
 	// Title is the resulting title of the work item in Azure DevOps
 	Title string `yaml:"title" json:"title"`
-
-	// Description contains the resulting text in the body of the work item
-	Description string `yaml:"description" json:"description"`
 
 	// Tasks is a slice of individual tasks that are part of the template
 	Tasks []Task `yaml:"tasks" json:"tasks"`
@@ -45,6 +44,6 @@ var AvailableTypes = []Type{
 }
 
 var PrinterSpecs = klo.Specs{
-	DefaultColumnSpec: "NAME:{.Name},TYPE:{.Type},SUMMARY:{.Summary}",
-	WideColumnSpec:    "NAME:{.Name},TYPE:{.Type},SUMMARY:{.Summary},TITLE:{.Title},TASKS:{.Tasks[*].Title}",
+	DefaultColumnSpec: "NAME:{.Meta.Name},TYPE:{.Meta.Type},SUMMARY:{.Meta.Summary}",
+	WideColumnSpec:    "NAME:{.Meta.Name},TYPE:{.Meta.Type},SUMMARY:{.Meta.Summary},TITLE:{.Meta.Title},TASKS:{.Meta.Tasks[*].Title}",
 }

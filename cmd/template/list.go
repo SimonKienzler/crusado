@@ -29,7 +29,7 @@ func List(_ *cobra.Command, _ []string) {
 }
 
 func GetAll(outputFormat string) error {
-	templates, err := templateService().GetAll()
+	templates, err := crusadoService().GetAll()
 	if err != nil {
 		return err
 	}

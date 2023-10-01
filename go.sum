@@ -558,6 +558,8 @@ github.com/yuin/goldmark v1.5.4/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5ta
 gitlab.com/bosi/decorder v0.4.0 h1:HWuxAhSxIvsITcXeP+iIRg9d1cVfvVkmlF7M68GaoDY=
 gitlab.com/bosi/decorder v0.4.0/go.mod h1:xarnteyUoJiOTEldDysquWKTVDCKo2TOIOIibSuWqOg=
 go-simpler.org/assert v0.6.0 h1:QxSrXa4oRuo/1eHMXSBFHKvJIpWABayzKldqZyugG7E=
+go.abhg.dev/goldmark/frontmatter v0.1.0 h1:NI9pAkz8irT/vZxxgzYe7rN93Q1+oYeHXfQkRZh37x4=
+go.abhg.dev/goldmark/frontmatter v0.1.0/go.mod h1:XqrEkZuM57djk7zrlRUB02x8I5J0px76YjkOzhB4YlU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=

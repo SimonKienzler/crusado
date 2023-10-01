@@ -8,14 +8,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/simonkienzler/crusado/pkg/config"
-	"github.com/simonkienzler/crusado/pkg/templates"
+	"github.com/simonkienzler/crusado/pkg/crusado"
 	"github.com/simonkienzler/crusado/pkg/workitems"
 
 	"github.com/fatih/color"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/work"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
 	"github.com/spf13/cobra"
 )
 
@@ -38,78 +34,28 @@ var (
 )
 
 func init() {
-	ApplyCmd.PersistentFlags().BoolVarP(
-		&dryRunFlag,
-		"dry-run",
-		"d",
-		false,
-		"if set to true, crusado doesn't actually create work items in Azure DevOps",
-	)
+	ApplyCmd.PersistentFlags().BoolVarP(&autoApproveFlag, "yes", "y", false, "skip confirmation step")
 
-	ApplyCmd.PersistentFlags().BoolVarP(
-		&autoApproveFlag,
-		"yes",
-		"y",
-		false,
-		"skip confirmation step",
-	)
+	dryRunDesc := "if set to true, crusado doesn't actually create work items in Azure DevOps"
+	ApplyCmd.PersistentFlags().BoolVarP(&dryRunFlag, "dry-run", "d", false, dryRunDesc)
 
-	ApplyCmd.PersistentFlags().IntVarP(
-		&iterationOffsetFlag,
-		"iteration-offset",
-		"i",
-		1,
-		"iteration to apply the template in, relative to the current iteration.\n1 will traget the next iteration, -1 the previous one.",
-	)
+	iterationOffsetDesc := "iteration to apply the template in, relative to the current iteration.\n1 will traget the next iteration, -1 the previous one."
+	ApplyCmd.PersistentFlags().IntVarP(&iterationOffsetFlag, "iteration-offset", "i", 1, iterationOffsetDesc)
 }
 
 func Apply(_ *cobra.Command, args []string) {
 	// TODO implement proper contexts
 	ctx := context.Background()
 
-	wiService, err := createWorkitemsService(ctx, dryRunFlag)
+	wiService, err := workitemsService(ctx, dryRunFlag)
 	if err != nil {
 		log.Fatalf("Error during service creation: %s", err)
 	}
 
-	ApplyFlow(ctx, templateService(), wiService, args[0])
+	ApplyFlow(ctx, crusadoService(), wiService, args[0])
 }
 
-func createWorkitemsService(ctx context.Context, useDryRunMode bool) (*workitems.Service, error) {
-	cfg := config.GetConfigOrDie()
-
-	// create a connection to the organization
-	connection := azuredevops.NewPatConnection(cfg.OrganizationURL, cfg.PersonalAccessToken)
-
-	workitemClient, err := workitemtracking.NewClient(ctx, connection)
-	if err != nil {
-		return nil, err
-	}
-
-	workClient, err := work.NewClient(ctx, connection)
-	if err != nil {
-		return nil, err
-	}
-
-	iterationPath, err := workitems.GetIterationPathFromOffset(ctx, workClient, cfg.ProjectName, iterationOffsetFlag)
-	if err != nil {
-		return nil, err
-	}
-
-	// configure the workitems service
-	workitemsService := workitems.Service{
-		WorkitemClient: workitemClient,
-		DryRun:         useDryRunMode,
-
-		ProjectName:   cfg.ProjectName,
-		AreaPath:      cfg.ProjectName,
-		IterationPath: iterationPath,
-	}
-
-	return &workitemsService, nil
-}
-
-func ApplyFlow(ctx context.Context, tplService *templates.Service, wiService *workitems.Service, templateName string) {
+func ApplyFlow(ctx context.Context, tplService *crusado.Service, wiService *workitems.Service, templateName string) {
 	var createdItemHint string
 
 	if dryRunFlag {
@@ -123,18 +69,13 @@ func ApplyFlow(ctx context.Context, tplService *templates.Service, wiService *wo
 		log.Fatalf("Could not get template: %s", err)
 	}
 
-	storyDescriptionHTML, err := templates.ConvertMarkdownToHTML(template.Description)
-	if err != nil {
-		log.Fatalf("Could not convert story desription from Markdown to HTML: %s", err)
-	}
-
 	coloredIterationPathPrinter(wiService.IterationPath)
 
 	if !autoApproveFlag {
-		coloredItemPrinter(template.Type, template.Title, "")
+		coloredItemPrinter(template.Meta.Type, template.Meta.Title, "")
 
-		for i := range template.Tasks {
-			task := template.Tasks[i]
+		for i := range template.Meta.Tasks {
+			task := template.Meta.Tasks[i]
 			coloredItemPrinter(workitems.TaskType, task.Title, "")
 		}
 
@@ -146,7 +87,7 @@ func ApplyFlow(ctx context.Context, tplService *templates.Service, wiService *wo
 		fmt.Println()
 	}
 
-	userStory, err := wiService.Create(ctx, template.Title, storyDescriptionHTML, template.Type)
+	userStory, err := wiService.Create(ctx, template.Meta.Title, template.Description, template.Meta.Type)
 	if err != nil {
 		log.Fatalf("Could not create from template '%s': %s", templateName, err)
 	}
@@ -158,16 +99,12 @@ func ApplyFlow(ctx context.Context, tplService *templates.Service, wiService *wo
 		createdItemHintWithURL += fmt.Sprintf(" at %s", *url)
 	}
 
-	coloredItemPrinter(template.Type, template.Title, createdItemHintWithURL)
+	coloredItemPrinter(template.Meta.Type, template.Meta.Title, createdItemHintWithURL)
 
-	for i := range template.Tasks {
-		task := template.Tasks[i]
-		taskDescriptionHTML, err := templates.ConvertMarkdownToHTML(task.Description)
-		if err != nil {
-			log.Fatalf("Could not convert task desription from Markdown to HTML: %s", err)
-		}
+	for i := range template.Meta.Tasks {
+		task := template.Meta.Tasks[i]
 
-		_, err = wiService.CreateTaskUnderneath(ctx, task.Title, taskDescriptionHTML, userStory)
+		_, err = wiService.CreateTaskUnderneath(ctx, task.Title, task.Description, userStory)
 		if err != nil {
 			log.Fatalf("Could not create task: %s", err)
 		}
@@ -176,7 +113,7 @@ func ApplyFlow(ctx context.Context, tplService *templates.Service, wiService *wo
 	}
 }
 
-func coloredItemPrinter(templateType templates.Type, title, addendum string) {
+func coloredItemPrinter(templateType crusado.Type, title, addendum string) {
 	const (
 		storyIcon = "📖"
 		bugIcon   = "🐛"
@@ -188,11 +125,11 @@ func coloredItemPrinter(templateType templates.Type, title, addendum string) {
 	txtColor := color.FgCyan
 
 	switch templateType {
-	case templates.UserStoryType:
+	case crusado.UserStoryType:
 		icon = storyIcon
 		txtColor = color.FgGreen
 		itemType = workitems.UserStoryType
-	case templates.BugType:
+	case crusado.BugType:
 		icon = bugIcon
 		txtColor = color.FgRed
 		itemType = workitems.BugType

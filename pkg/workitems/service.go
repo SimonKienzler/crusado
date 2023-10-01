@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/simonkienzler/crusado/pkg/templates"
+	"github.com/simonkienzler/crusado/pkg/crusado"
 
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/webapi"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/workitemtracking"
@@ -40,7 +40,7 @@ type Service struct {
 }
 
 // Create is responsible for creating arbitrary workitems of the specified type.
-func (s *Service) Create(ctx context.Context, title, description string, templateType templates.Type) (*workitemtracking.WorkItem, error) {
+func (s *Service) Create(ctx context.Context, title, description string, templateType crusado.Type) (*workitemtracking.WorkItem, error) {
 	project := s.ProjectName
 	workItemType := getWorkItemTypeForTemplateType(templateType)
 	validateOnly := s.DryRun
@@ -58,7 +58,7 @@ func (s *Service) CreateTaskUnderneath(ctx context.Context, title, description s
 	project := s.ProjectName
 	workItemType := TaskType
 	validateOnly := s.DryRun
-	document := s.buildBasicWorkItemJSONPatchDocument(title, description, templates.TaskType)
+	document := s.buildBasicWorkItemJSONPatchDocument(title, description, crusado.TaskType)
 
 	if parent == nil {
 		return nil, ErrTaskWithoutParent
@@ -112,15 +112,15 @@ func (s *Service) GetWorkItemHTMLRef(workItem *workitemtracking.WorkItem) (*stri
 	return &href, nil
 }
 
-func (s *Service) buildBasicWorkItemJSONPatchDocument(title, description string, templateType templates.Type) []webapi.JsonPatchOperation {
+func (s *Service) buildBasicWorkItemJSONPatchDocument(title, description string, templateType crusado.Type) []webapi.JsonPatchOperation {
 	fieldPathForDescription := ""
 	switch templateType {
 	// Bug doesn't use a description, but rather Repro Steps
-	case templates.BugType:
+	case crusado.BugType:
 		fieldPathForDescription = "/fields/Microsoft.VSTS.TCM.ReproSteps"
-	case templates.UserStoryType:
+	case crusado.UserStoryType:
 		fieldPathForDescription = "/fields/System.Description"
-	case templates.TaskType:
+	case crusado.TaskType:
 		fieldPathForDescription = "/fields/System.Description"
 	default:
 		fieldPathForDescription = "/fields/System.Description"
@@ -145,13 +145,13 @@ func stringPointer(s string) *string {
 	return &s
 }
 
-func getWorkItemTypeForTemplateType(templateType templates.Type) string {
+func getWorkItemTypeForTemplateType(templateType crusado.Type) string {
 	switch templateType {
-	case templates.UserStoryType:
+	case crusado.UserStoryType:
 		return UserStoryType
-	case templates.BugType:
+	case crusado.BugType:
 		return BugType
-	case templates.TaskType:
+	case crusado.TaskType:
 		return TaskType
 	default:
 		return ""
