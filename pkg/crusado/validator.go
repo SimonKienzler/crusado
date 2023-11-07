@@ -14,7 +14,7 @@ var (
 // ValidateTemplateList validates the list of templates given as a whole as well
 // as each indiviual template within the list. It returns an error that is
 // constructed using errors.Join().
-func ValidateTemplateList(templateList []Meta) error {
+func ValidateTemplateList(templateList []Template) error {
 	errs := []error{}
 
 	errs = append(errs, ValidateUniqueName(templateList))
@@ -26,7 +26,7 @@ func ValidateTemplateList(templateList []Meta) error {
 	return errors.Join(errs...)
 }
 
-func ValidateUniqueName(templateList []Meta) error {
+func ValidateUniqueName(templateList []Template) error {
 	templateNames := map[string]bool{}
 	errs := []error{}
 
@@ -44,7 +44,7 @@ func ValidateUniqueName(templateList []Meta) error {
 
 // ValidateTemplate validates the given template. It returns an error that is
 // constructed using errors.Join().
-func ValidateTemplate(template *Meta) error {
+func ValidateTemplate(template *Template) error {
 	var errs []error
 
 	errs = append(errs, ValidateType(template))
@@ -52,7 +52,7 @@ func ValidateTemplate(template *Meta) error {
 	return errors.Join(errs...)
 }
 
-func ValidateType(template *Meta) error {
+func ValidateType(template *Template) error {
 	if template.Type == "" {
 		return ErrTypeNotSet
 	}

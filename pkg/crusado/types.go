@@ -3,8 +3,10 @@ package crusado
 import "github.com/thediveo/klo"
 
 type Template struct {
-	Meta        Meta
-	Description string
+	Meta
+
+	// Description is the content of the WorkItem. Can contain HTML
+	Description string `yaml:"description" json:"description"`
 }
 
 // Meta represents the Metadata associated with a Crusado template
@@ -44,6 +46,6 @@ var AvailableTypes = []Type{
 }
 
 var PrinterSpecs = klo.Specs{
-	DefaultColumnSpec: "NAME:{.Meta.Name},TYPE:{.Meta.Type},SUMMARY:{.Meta.Summary}",
-	WideColumnSpec:    "NAME:{.Meta.Name},TYPE:{.Meta.Type},SUMMARY:{.Meta.Summary},TITLE:{.Meta.Title},TASKS:{.Meta.Tasks[*].Title}",
+	DefaultColumnSpec: "NAME:{.Name},TYPE:{.Type},SUMMARY:{.Summary}",
+	WideColumnSpec:    "NAME:{.Name},TYPE:{.Type},SUMMARY:{.Summary},TITLE:{.Title},TASKS:{.Tasks[*].Title}",
 }

@@ -24,7 +24,7 @@ func init() {
 func List(_ *cobra.Command, _ []string) {
 	err := GetAll(outputFlag)
 	if err != nil {
-		log.Fatalf("Could not get templates: %q", err)
+		log.Fatalf("Could not get templates:\n%v", err)
 	}
 }
 

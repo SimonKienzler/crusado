@@ -66,16 +66,16 @@ func ApplyFlow(ctx context.Context, tplService *crusado.Service, wiService *work
 
 	template, err := tplService.GetByName(templateName)
 	if err != nil {
-		log.Fatalf("Could not get template: %s", err)
+		log.Fatalf("Could not get template:\n%v", err)
 	}
 
 	coloredIterationPathPrinter(wiService.IterationPath)
 
 	if !autoApproveFlag {
-		coloredItemPrinter(template.Meta.Type, template.Meta.Title, "")
+		coloredItemPrinter(template.Type, template.Title, "")
 
-		for i := range template.Meta.Tasks {
-			task := template.Meta.Tasks[i]
+		for i := range template.Tasks {
+			task := template.Tasks[i]
 			coloredItemPrinter(workitems.TaskType, task.Title, "")
 		}
 
@@ -87,7 +87,7 @@ func ApplyFlow(ctx context.Context, tplService *crusado.Service, wiService *work
 		fmt.Println()
 	}
 
-	userStory, err := wiService.Create(ctx, template.Meta.Title, template.Description, template.Meta.Type)
+	userStory, err := wiService.Create(ctx, template.Title, template.Description, template.Type)
 	if err != nil {
 		log.Fatalf("Could not create from template '%s': %s", templateName, err)
 	}
@@ -99,10 +99,10 @@ func ApplyFlow(ctx context.Context, tplService *crusado.Service, wiService *work
 		createdItemHintWithURL += fmt.Sprintf(" at %s", *url)
 	}
 
-	coloredItemPrinter(template.Meta.Type, template.Meta.Title, createdItemHintWithURL)
+	coloredItemPrinter(template.Type, template.Title, createdItemHintWithURL)
 
-	for i := range template.Meta.Tasks {
-		task := template.Meta.Tasks[i]
+	for i := range template.Tasks {
+		task := template.Tasks[i]
 
 		_, err = wiService.CreateTaskUnderneath(ctx, task.Title, task.Description, userStory)
 		if err != nil {

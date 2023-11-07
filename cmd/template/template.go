@@ -84,12 +84,12 @@ func getPrinter(outputFormat string) (klo.ValuePrinter, error) {
 
 func prettyPrintTemplate(template *crusado.Template) {
 	// TODO add color
-	fmt.Printf("Name:             %s\n", template.Meta.Name)
-	fmt.Printf("Type:             %s\n", template.Meta.Type)
-	fmt.Printf("Title:            %s\n", template.Meta.Title)
-	fmt.Printf("Number of Tasks:  %d\n", len(template.Meta.Tasks))
+	fmt.Printf("Name:             %s\n", template.Name)
+	fmt.Printf("Type:             %s\n", template.Type)
+	fmt.Printf("Title:            %s\n", template.Title)
+	fmt.Printf("Number of Tasks:  %d\n", len(template.Tasks))
 	fmt.Print("Task Overview:\n")
-	for _, task := range template.Meta.Tasks {
+	for _, task := range template.Tasks {
 		fmt.Printf("  - %s\n", task.Title)
 	}
 }

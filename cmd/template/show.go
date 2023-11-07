@@ -25,7 +25,7 @@ func init() {
 func Show(_ *cobra.Command, args []string) {
 	err := GetByName(args[0], outputFlag)
 	if err != nil {
-		log.Fatalf("Could not get template by name '%s': %q", args[0], err)
+		log.Fatalf("Could not get template by name '%s':\n%v", args[0], err)
 	}
 }
 
