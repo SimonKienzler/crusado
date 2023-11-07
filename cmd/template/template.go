@@ -3,7 +3,6 @@ package template
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/work"
@@ -92,9 +91,4 @@ func prettyPrintTemplate(template *crusado.Template) {
 	for _, task := range template.Tasks {
 		fmt.Printf("  - %s\n", task.Title)
 	}
-}
-
-func prettyPrintValidationError(err error) {
-	fmt.Printf("Invalid profile:\n\n%s\n\n", err)
-	os.Exit(1)
 }

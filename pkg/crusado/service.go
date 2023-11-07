@@ -83,47 +83,49 @@ func (s *Service) loadTemplatesFromDir() error {
 			continue
 		}
 
-		filePath := path.Join(s.TemplatesDirectory, e.Name())
-		file, err := os.Open(filePath)
-		if err != nil {
-			log.Printf("Could not open %s: %q", filePath, err)
+		if err := s.parseFile(e.Name(), fileType); err != nil {
+			log.Printf("error parsing file: %q", err)
 			continue
 		}
-
-		defer func() error {
-			if err = file.Close(); err != nil {
-				return err
-			}
-			return nil
-		}()
-
-		b, err := io.ReadAll(file)
-		if err != nil {
-			log.Printf("Could not read %s: %q", filePath, err)
-			continue
-		}
-
-		var tpls []Template
-
-		switch fileType {
-		case MarkdownFileType:
-			tpls, err = parseMarkdown(b)
-		case YAMLFileType:
-			tpls, err = parseYAML(b)
-		default:
-			log.Printf("Could not parse %s: No matching parser found", filePath)
-			continue
-		}
-
-		if err != nil {
-			log.Printf("Could not parse %s: %q", filePath, err)
-			continue
-		}
-
-		s.templates = append(s.templates, tpls...)
 	}
 
 	return ValidateTemplateList(s.templates)
+}
+
+func (s *Service) parseFile(name string, fileType FileType) error {
+	filePath := path.Join(s.TemplatesDirectory, name)
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("could not open %s: %q", filePath, err)
+	}
+
+	defer func() error {
+		return file.Close()
+	}()
+
+	b, err := io.ReadAll(file)
+	if err != nil {
+		return fmt.Errorf("could not read %s: %q", filePath, err)
+	}
+
+	var tpls []Template
+
+	switch fileType {
+	case MarkdownFileType:
+		tpls, err = parseMarkdown(b)
+	case YAMLFileType:
+		tpls, err = parseYAML(b)
+	default:
+		return fmt.Errorf("could not parse %s: no matching parser found", filePath)
+	}
+
+	if err != nil {
+		return fmt.Errorf("could not parse %s: %q", filePath, err)
+	}
+
+	s.templates = append(s.templates, tpls...)
+
+	return nil
 }
 
 func parseMarkdown(content []byte) ([]Template, error) {
