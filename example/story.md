@@ -1,7 +1,10 @@
 ---
+# information relevant for crusado and CLI usage
 name: example
 summary: This template demonstrates the capabilities of crusado.
 type: UserStory
+
+# information that will end up in the Azure WorkItem
 title: Try out crusado
 tasks:
   - title: Download crusado

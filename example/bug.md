@@ -1,7 +1,10 @@
 ---
+# information relevant for crusado and CLI usage
 name: example-bug 
 summary: This is a bug template.
 type: Bug
+
+# information that will end up in the Azure WorkItem
 title: Fix stuff
 tasks:
   - title: Fix first component
