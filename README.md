@@ -86,12 +86,12 @@ export CRUSADO_AZURE_PAT=<your PAT>
 # crusado does not yet have a well-known, default config path. For now,
 # you have to explicitly set the path to your profile (which we'll create
 # in the next step). Recommended value: ~/.crusado/<your project name>.yaml
-export CRUSADO_PROFILE_FILE_PATH=./example/profile.yaml
+export CRUSADO_TEMPLATES_DIR=./example/profile.yaml
 ```
 
 ### 4 Create Your `crusado` Template Files
 
-In the last step, you set the `CRUSADO_PROFILE_FILE_PATH` environment variable.
+In the last step, you set the `CRUSADO_TEMPLATES_DIR` environment variable.
 Create as many Markdown files as you like at the location you specified as that
 variable's value. You can use these files to manage your User Story and Bug
 templates with a combination of Markdown text and some Frontmatter.
@@ -180,7 +180,7 @@ crusado template list
 
 This will display a list of all available templates in the current profile
 (remember that you can use different profiles and switch between them by
-changing the `CRUSADO_PROFILE_FILE_PATH` environment variable).
+changing the `CRUSADO_TEMPLATES_DIR` environment variable).
 
 Similar to `kubectl` and many other CLIs, `crusado` supports multiple output
 formats via the `--output`/`-o` flag. E.g., call `crusado template list -ojson`
