@@ -3,7 +3,7 @@ package crusado
 import "github.com/thediveo/klo"
 
 type Template struct {
-	Meta
+	Meta `yaml:",inline" json:",inline"`
 
 	// Description is the content of the WorkItem. Can contain HTML
 	Description string `yaml:"description" json:"description"`
