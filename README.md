@@ -29,7 +29,7 @@ To get started with `crusado`, you need a couple of things:
 1. Installed `crusado` CLI
 1. Azure Personal Access Token (PAT) with correct permissions
 1. A few environment variables set
-1. YAML config file that contains your User Story and Bug templates
+1. Markdown files with Frontmatter that contain your User Story and Bug templates
 
 Let's take care of these things one by one.
 
@@ -86,71 +86,68 @@ export CRUSADO_AZURE_PAT=<your PAT>
 # crusado does not yet have a well-known, default config path. For now,
 # you have to explicitly set the path to your profile (which we'll create
 # in the next step). Recommended value: ~/.crusado/<your project name>.yaml
-export CRUSADO_PROFILE_FILE_PATH=./example/profile.yaml
+export CRUSADO_TEMPLATES_DIR=./example/profile.yaml
 ```
 
-### 4 Create Your `crusado` Profile YAML File
+### 4 Create Your `crusado` Template Files
 
-In the last step, you set the `CRUSADO_PROFILE_FILE_PATH` environment variable.
-Create a YAML file at the location you specified as that variable's value. You
-can use this file to manage your User Story and Bug templates.
+In the last step, you set the `CRUSADO_TEMPLATES_DIR` environment variable.
+Create as many Markdown files as you like at the location you specified as that
+variable's value. You can use these files to manage your User Story and Bug
+templates with a combination of Markdown text and some Frontmatter.
 
 Take a look at this minimal example:
 
-```yaml
-name: example-profile
-templates:
-  - name: example-story
-    summary: This is a user story template.
-    type: UserStory
-    title: Try out crusado
-    description: |
-      This will end up in the **description field** of the user story.
+```md
+---
+name: example-story
+summary: This is a user story template.
+type: UserStory
 
-      [Markdown](https://en.m.wikipedia.org/wiki/Markdown) is supported!
-    tasks:
-      - title: Download crusado
-      - title: Test crusado
-      - title: Document test results
-        description: Optional description of a task
+title: Try out crusado
+tasks:
+  - title: Download crusado
+  - title: Test crusado
+  - title: Document test results
+    description: Optional description of a task
+---
+
+## Your User Story Description
+
+This will end up in the **description field** of the user story.
+
+[Markdown](https://en.m.wikipedia.org/wiki/Markdown) is supported!
 ```
 
-For a more elaborate example, see [example/profile.yaml](./example/profile.yaml).
+For a more elaborate example, see the [example directory](./example/).
 
 <details>
-  <summary>More information about the available fields (click to toggle)</summary>
-  
-  * `name`: The profile name is somewhat optional at the moment. `crusado` aims
-    to support multiple profiles at some point. This will allow you to keep
-    templates for different organizations and projects in seperate files and
-    quickly switch between profiles using a `crusado` subcommand. For now, this
-    field has no influence on your `crusado` usage.
-  * `templates`: A list of all the templates within this profile.
-    * `name`: The name of the template within the context of `crusado`. This is
-      the name you call in the `crusado template` subcommands to address this
-      template. So chose a short and concise one! This is _not_ the name of the
-      resulting User Story/Bug (that would be `title`).
-    * `summary`: A short summary of the template within the context of
-      `crusado`. This summary will not end up in the resulting User Story/Bug,
-      but instead is used during `crusado template list` to give you a little
-      more context on what the template contains. Use this field in whatever way
-      supports your workflow best.
-    * `type`: One of [`UserStory`, `Bug`]. Available options might be extended
-      in the future.
-    * `title`: This is the title of the resulting User Story/Bug in Azure DevOps
-      once the template is applied.
-    * `description`: This is the title of the resulting User Story/ the Repro
-      Steps of the resulting Bug in Azure DevOps once the template is applied.
-      You can use multi-line YAML strings and sprinkle some Markdown in there.
-      (No guarantuee that Azure DevOps will accept all resulting HTML, but in my
-      tests, most standard Markdown worked.)
-    * `tasks`: The tasks to create as children of the User Story/Bug. Can be
-      left empty if your template doesn't need subtasks.
-      * `title`: Like `templates[].title`, the title of the resulting task in
-        Azure Devops.
-      * `description`: Like `templates[].description`, the description of the
-        resulting task in Azure Devops. You can leave this empty.
+  <summary>More information about the available Frontmatter fields (click to toggle)</summary>
+
+  * `name`: The name of the template within the context of `crusado`. This is
+    the name you call in the `crusado template` subcommands to address this
+    template. So chose a short and concise one! This is _not_ the name of the
+    resulting User Story/Bug (that would be `title`).
+  * `summary`: A short summary of the template within the context of
+    `crusado`. This summary will not end up in the resulting User Story/Bug,
+    but instead is used during `crusado template list` to give you a little
+    more context on what the template contains. Use this field in whatever way
+    best supports your workflow.
+  * `type`: One of [`UserStory`, `Bug`]. Available options might be extended
+    in the future.
+  * `title`: This is the title of the resulting User Story/Bug in Azure DevOps
+    once the template is applied.
+  * `tasks`: The tasks to create as children of the User Story/Bug. Can be
+    left empty if your template doesn't need subtasks.
+    * `title`: Like the higher-level `title`, the title of the resulting task in
+      Azure Devops.
+    * `description`: The description of the resulting task in Azure Devops. You
+      can leave this empty.
 </details>
+
+All Markdown content below the Frontmatter will be interpreted by `crusado` as
+the content/description of the UserStory/Bug. (No guarantee that Azure DevOps
+will accept all resulting HTML, but in my tests, most standard Markdown worked.)
 
 That's a complete setup for `crusado`! Now continue with how to put it to use.
 
@@ -183,7 +180,7 @@ crusado template list
 
 This will display a list of all available templates in the current profile
 (remember that you can use different profiles and switch between them by
-changing the `CRUSADO_PROFILE_FILE_PATH` environment variable).
+changing the `CRUSADO_TEMPLATES_DIR` environment variable).
 
 Similar to `kubectl` and many other CLIs, `crusado` supports multiple output
 formats via the `--output`/`-o` flag. E.g., call `crusado template list -ojson`
@@ -196,9 +193,9 @@ crusado template show <template name>
 ```
 
 In case you want to take a closer look at the template you want to apply, use
-this command. The `<template name>` is the one specified in the profile as
-`templates[].name`. The name is also displayed in the `NAME` column when you
-`list` the templates. 
+this command. The `<template name>` is the one specified in the Frontmatter as
+`name`. The name is also displayed in the `NAME` column when you `list` the
+templates.
 
 This command also supports multiple output formats via the `--output`/`-o` flag.
 

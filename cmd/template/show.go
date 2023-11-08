@@ -4,10 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/simonkienzler/crusado/pkg/config"
-	"github.com/simonkienzler/crusado/pkg/templates"
-	"github.com/simonkienzler/crusado/pkg/validator"
-
 	"github.com/spf13/cobra"
 )
 
@@ -27,32 +23,14 @@ func init() {
 }
 
 func Show(_ *cobra.Command, args []string) {
-	cfg := config.GetConfig()
-
-	// create templateList from example
-	templateList, err := config.GetTemplateListFromFile(cfg.ProfileFilePath)
+	err := GetByName(args[0], outputFlag)
 	if err != nil {
-		log.Fatalf("Could not read example template file: %q", err)
-		return
-	}
-
-	err = validator.ValidateTemplateList(templateList)
-	if err != nil {
-		prettyPrintValidationError(err)
-	}
-
-	err = GetByName(templateList, args[0], outputFlag)
-	if err != nil {
-		log.Fatalf("Could not get template by name '%s': %q", args[0], err)
+		log.Fatalf("Could not get template by name '%s':\n%v", args[0], err)
 	}
 }
 
-func GetByName(profile *config.TemplateList, name, outputFormat string) error {
-	ustService := templates.Service{
-		TemplateList: *profile,
-	}
-
-	template, err := ustService.GetTemplateFromName(name)
+func GetByName(name, outputFormat string) error {
+	template, err := crusadoService().GetByName(name)
 	if err != nil {
 		return err
 	}
